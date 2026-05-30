@@ -1044,3 +1044,69 @@ a { color: var(--gold); text-decoration: none; }
   .members-grid { grid-template-columns: repeat(4, 1fr); }
   .main-title { font-size: 2.2rem; }
 }
+
+/* ========================================
+   Loading & Error States
+======================================== */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 20px;
+  gap: 16px;
+}
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  color: var(--gray);
+  font-size: 0.9rem;
+}
+
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 64px 20px;
+  gap: 10px;
+  text-align: center;
+}
+
+.error-icon { font-size: 2.4rem; }
+
+.error-text {
+  color: var(--loss);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.error-detail {
+  color: var(--gray);
+  font-size: 0.8rem;
+  word-break: break-all;
+}
+
+.error-retry-btn {
+  margin-top: 8px;
+  padding: 10px 24px;
+  background: var(--gold);
+  color: var(--white);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.error-retry-btn:hover { background: var(--gold-lt); }

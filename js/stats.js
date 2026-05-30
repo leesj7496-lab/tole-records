@@ -6,13 +6,29 @@ const stats = {
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.tab === 'goals');
     });
-    this._render('goals');
+    this._renderAsync('goals');
   },
 
   showTab(type, el) {
     this.currentTab = type;
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     el.classList.add('active');
+    this._renderAsync(type);
+  },
+
+  async _renderAsync(type) {
+    const container = document.getElementById('stats-content');
+
+    if (!api._loaded) {
+      container.innerHTML = this._loadingHtml();
+      try {
+        await api.loadData();
+      } catch(e) {
+        container.innerHTML = this._errorHtml(e.message, () => this._renderAsync(type));
+        return;
+      }
+    }
+
     this._render(type);
   },
 
@@ -79,5 +95,28 @@ const stats = {
       .filter(([, c]) => c > 0)
       .sort((a, b) => b[1] - a[1])
       .map(([name, count]) => ({ name, count }));
+  },
+
+  _loadingHtml() {
+    return `
+      <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">통계를 불러오는 중...</p>
+      </div>`;
+  },
+
+  _errorHtml(message, retryFn) {
+    const id = 'retry-' + Date.now();
+    setTimeout(() => {
+      const btn = document.getElementById(id);
+      if (btn) btn.onclick = retryFn;
+    }, 0);
+    return `
+      <div class="error-container">
+        <div class="error-icon">⚠️</div>
+        <p class="error-text">데이터를 불러오지 못했습니다.</p>
+        <p class="error-detail">${String(message).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</p>
+        <button id="${id}" class="error-retry-btn">다시 시도</button>
+      </div>`;
   }
 };

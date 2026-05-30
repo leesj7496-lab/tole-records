@@ -133,6 +133,10 @@ function doGet(e) {
       return jsonOk(getAllMatches());
     }
 
+    if (action === 'getAll') {
+      return jsonOk(getAllData());
+    }
+
     if (action === 'getMatch') {
       if (!matchId) return jsonErr('matchId 파라미터가 필요합니다.');
       return jsonOk(getMatchDetail(matchId));
@@ -192,6 +196,23 @@ function doPost(e) {
 }
 
 // ── 비즈니스 로직 ───────────────────────────────────────────────────
+
+/**
+ * matches + goals 전체를 한 번에 반환 (클라이언트 초기 로드용)
+ */
+function getAllData() {
+  var matches = getAllMatches();
+  var goals   = sheetToObjects(SH.GOALS).map(function(g) {
+    return {
+      goal_id:     String(g.goal_id),
+      match_id:    String(g.match_id),
+      scorer:      String(g.scorer),
+      assist:      String(g.assist),
+      description: String(g.description || '')
+    };
+  });
+  return { matches: matches, goals: goals };
+}
 
 function getAllMatches() {
   return sheetToObjects(SH.MATCHES).map(function(m) {

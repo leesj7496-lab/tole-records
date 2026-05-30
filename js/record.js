@@ -578,7 +578,7 @@ const record = {
 
   // ── Save ─────────────────────────────────────────────────────
 
-  save() {
+  async save() {
     const date     = document.getElementById('rec-date').value.trim();
     const location = document.getElementById('rec-location').value.trim();
     const opponent = document.getElementById('rec-opponent').value.trim();
@@ -616,8 +616,17 @@ const record = {
       members, summary
     };
 
-    // TODO: this.photos — Google Drive 연동 시 업로드 처리
-    api.saveMatch(matchData, goals);
+    const btn = document.querySelector('.btn-save');
+    if (btn) { btn.textContent = '저장 중...'; btn.disabled = true; }
+
+    try {
+      await api.saveMatch(matchData, goals);
+    } catch(e) {
+      alert(`저장에 실패했습니다.\n${e.message}`);
+      if (btn) { btn.textContent = '저장하기'; btn.disabled = false; }
+      return;
+    }
+
     this._clearDraft();
     alert('경기 기록이 저장됐습니다!');
     app.goMatches();

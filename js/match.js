@@ -46,14 +46,14 @@ const match = {
       if (calEl)    calEl.style.display    = 'none';
       if (filterEl) filterEl.style.display = '';
       this._renderFilterBar();
-      this._renderFilteredList();
+      this._renderFilteredList().catch(e => console.error(e));
     } else {
       listBtn?.classList.remove('active');
       calBtn?.classList.add('active');
       if (listEl)   listEl.style.display   = 'none';
       if (calEl)    calEl.style.display    = '';
       if (filterEl) filterEl.style.display = 'none';
-      this.renderCalendar(this.calYear, this.calMonth);
+      this.renderCalendar(this.calYear, this.calMonth).catch(e => console.error(e));
     }
   },
 
@@ -88,12 +88,22 @@ const match = {
   onFilterChange() {
     this.listYear  = parseInt(document.getElementById('filter-year').value);
     this.listMonth = parseInt(document.getElementById('filter-month').value);
-    this._renderFilteredList();
+    this._renderFilteredList().catch(e => console.error(e));
   },
 
-  _renderFilteredList() {
+  async _renderFilteredList() {
     const listEl = document.getElementById('match-list');
     if (!listEl) return;
+
+    if (!api._loaded) {
+      listEl.innerHTML = this._loadingHtml();
+      try {
+        await api.loadData();
+      } catch(e) {
+        listEl.innerHTML = this._errorHtml(e.message, () => this._renderFilteredList());
+        return;
+      }
+    }
 
     const pad    = n => String(n).padStart(2, '0');
     const prefix = `${this.listYear}-${pad(this.listMonth)}`;
@@ -114,14 +124,24 @@ const match = {
 
   // ── Calendar View ────────────────────────────────────────────
 
-  renderCalendar(year, month) {
+  async renderCalendar(year, month) {
     this.calYear  = year;
     this.calMonth = month;
 
     const container = document.getElementById('match-calendar');
-    const matches   = api.getMatches();
 
-    // 날짜 → { id, result } 맵
+    if (!api._loaded) {
+      container.innerHTML = this._loadingHtml();
+      try {
+        await api.loadData();
+      } catch(e) {
+        container.innerHTML = this._errorHtml(e.message, () => this.renderCalendar(year, month));
+        return;
+      }
+    }
+
+    const matches = api.getMatches();
+
     const dateMap = {};
     matches.forEach(m => { dateMap[m.date] = { id: m.match_id, result: m.result }; });
 
@@ -134,7 +154,6 @@ const match = {
     const dimPrev  = new Date(year, month,  0).getDate();
     const todayStr = new Date().toISOString().slice(0, 10);
 
-    // 셀 배열 구성
     const cells = [];
     for (let i = firstDow - 1; i >= 0; i--)
       cells.push({ day: dimPrev - i, cur: false });
@@ -181,25 +200,38 @@ const match = {
   prevMonth() {
     let y = this.calYear, m = this.calMonth - 1;
     if (m < 0) { m = 11; y--; }
-    this.renderCalendar(y, m);
+    this.renderCalendar(y, m).catch(e => console.error(e));
   },
 
   nextMonth() {
     let y = this.calYear, m = this.calMonth + 1;
     if (m > 11) { m = 0; y++; }
-    this.renderCalendar(y, m);
+    this.renderCalendar(y, m).catch(e => console.error(e));
   },
 
   // ── Detail View ──────────────────────────────────────────────
 
-  renderDetail(matchId) {
+  async renderDetail(matchId) {
     const container = document.getElementById('match-detail-content');
-    const m = api.getMatch(matchId);
-    if (!m) { container.innerHTML = '<div class="no-data">경기 정보를 찾을 수 없습니다.</div>'; return; }
+    container.innerHTML = this._loadingHtml();
 
-    const goals      = api.getGoals(matchId);
+    let m, goals;
+    try {
+      const data = await api.fetchMatchDetail(matchId);
+      m     = data.match;
+      goals = data.goals || [];
+    } catch(e) {
+      container.innerHTML = this._errorHtml(e.message, () => this.renderDetail(matchId));
+      return;
+    }
+
+    if (!m) {
+      container.innerHTML = '<div class="no-data">경기 정보를 찾을 수 없습니다.</div>';
+      return;
+    }
+
     const { badge, cls } = this._resultInfo(m.result);
-    const officials  = m.members.filter(n => !n.includes('(용병)'));
+    const officials   = m.members.filter(n => !n.includes('(용병)'));
     const mercenaries = m.members.filter(n => n.includes('(용병)'));
 
     const memberChips = [
@@ -275,5 +307,28 @@ const match = {
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  },
+
+  _loadingHtml() {
+    return `
+      <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">데이터를 불러오는 중...</p>
+      </div>`;
+  },
+
+  _errorHtml(message, retryFn) {
+    const id = 'retry-' + Date.now();
+    setTimeout(() => {
+      const btn = document.getElementById(id);
+      if (btn) btn.onclick = retryFn;
+    }, 0);
+    return `
+      <div class="error-container">
+        <div class="error-icon">⚠️</div>
+        <p class="error-text">데이터를 불러오지 못했습니다.</p>
+        <p class="error-detail">${this._esc(message)}</p>
+        <button id="${id}" class="error-retry-btn">다시 시도</button>
+      </div>`;
   }
 };
