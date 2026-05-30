@@ -5,7 +5,6 @@ const record = {
   goalEntries: [],
   goalCounter: 0,
   selectedResult: '',
-  photos: [],
   _saveTimer: null,
 
   init() {
@@ -13,7 +12,6 @@ const record = {
     this.goalEntries = [];
     this.goalCounter = 0;
     this.selectedResult = '';
-    this.photos = [];
     this._saveTimer = null;
     this._pendingDraft = null;
 
@@ -122,7 +120,7 @@ const record = {
           </div>
         </div>
 
-        <!-- STEP 3: 경기 내용 (공격포인트 + 총평 + 사진) -->
+        <!-- STEP 3: 경기 내용 (공격포인트 + 총평) -->
         <div class="step-block" id="step-3">
           <div class="step-summary-bar" id="step-3-summary-bar">
             <div class="step-summary-content">
@@ -141,17 +139,6 @@ const record = {
               <div class="form-section-title">총평 <span class="optional">(선택)</span></div>
               <textarea id="rec-summary" class="form-textarea" placeholder="경기 총평을 입력하세요..."
                 oninput="record._autosaveDraft()"></textarea>
-            </div>
-            <div class="form-section">
-              <div class="form-section-title">사진 첨부 <span class="optional">(선택, 최대 5장)</span></div>
-              <div id="photo-preview" class="photo-preview"></div>
-              <div class="photo-actions">
-                <input type="file" id="photo-input" accept="image/*" multiple style="display:none"
-                  onchange="record.addPhotos(this.files)">
-                <button type="button" class="btn btn-secondary" id="photo-add-btn"
-                  onclick="document.getElementById('photo-input').click()">+ 사진 추가</button>
-                <span id="photo-count" class="photo-count">0 / 5</span>
-              </div>
             </div>
             <button type="button" class="btn btn-step" onclick="record.nextStep(3)">결과 입력 →</button>
           </div>
@@ -237,11 +224,9 @@ const record = {
 
   _getStep3Summary() {
     const goals = this.goalEntries.length;
-    const photos = this.photos.length;
     const hasSummary = !!(document.getElementById('rec-summary')?.value?.trim());
     const parts = [`골 ${goals}개`];
-    if (photos > 0)  parts.push(`사진 ${photos}장`);
-    if (hasSummary)  parts.push('총평 작성');
+    if (hasSummary) parts.push('총평 작성');
     return parts.join(' · ');
   },
 
@@ -317,7 +302,6 @@ const record = {
     this.goalCounter    = draft.goalCounter || 0;
     this.goalEntries    = [];
     this.selectedResult = draft.selectedResult || '';
-    this.photos         = [];
 
     this._renderForm();
 
@@ -532,50 +516,6 @@ const record = {
     });
   },
 
-  // ── Photos ───────────────────────────────────────────────────
-
-  addPhotos(files) {
-    const remaining = 5 - this.photos.length;
-    if (remaining <= 0) { alert('사진은 최대 5장까지 첨부 가능합니다.'); return; }
-
-    const toAdd = Array.from(files).slice(0, remaining);
-    if (Array.from(files).length > remaining)
-      alert(`최대 5장까지만 첨부 가능합니다. ${remaining}장만 추가됩니다.`);
-
-    let loaded = 0;
-    toAdd.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = e => {
-        this.photos.push({ dataUrl: e.target.result, name: file.name });
-        if (++loaded === toAdd.length) this._renderPhotoPreview();
-      };
-      reader.readAsDataURL(file);
-    });
-    document.getElementById('photo-input').value = '';
-  },
-
-  removePhoto(index) {
-    this.photos.splice(index, 1);
-    this._renderPhotoPreview();
-  },
-
-  _renderPhotoPreview() {
-    const preview = document.getElementById('photo-preview');
-    const btn     = document.getElementById('photo-add-btn');
-    const count   = document.getElementById('photo-count');
-    if (!preview) return;
-
-    preview.innerHTML = this.photos.map((p, i) => `
-      <div class="photo-thumb">
-        <img src="${p.dataUrl}" alt="첨부 사진 ${i + 1}">
-        <button type="button" class="photo-thumb-del"
-          onclick="record.removePhoto(${i})" title="삭제">×</button>
-      </div>`).join('');
-
-    if (count) count.textContent = `${this.photos.length} / 5`;
-    if (btn)   btn.style.display = this.photos.length >= 5 ? 'none' : '';
-  },
-
   // ── Save ─────────────────────────────────────────────────────
 
   async save() {
@@ -619,23 +559,12 @@ const record = {
     const btn = document.querySelector('.btn-save');
     if (btn) { btn.textContent = '저장 중...'; btn.disabled = true; }
 
-    let matchId;
     try {
-      matchId = await api.saveMatch(matchData, goals);
+      await api.saveMatch(matchData, goals);
     } catch(e) {
       alert(`저장에 실패했습니다.\n${e.message}`);
       if (btn) { btn.textContent = '저장하기'; btn.disabled = false; }
       return;
-    }
-
-    // 사진 업로드 (경기 기록은 이미 저장됨 — 실패해도 계속 진행)
-    for (let i = 0; i < this.photos.length; i++) {
-      if (btn) btn.textContent = `사진 업로드 중... (${i + 1}/${this.photos.length})`;
-      try {
-        await api.uploadPhoto(matchId, this.photos[i].dataUrl, this.photos[i].name);
-      } catch(e) {
-        console.warn(`사진 ${i + 1} 업로드 실패:`, e.message);
-      }
     }
 
     this._clearDraft();

@@ -79,35 +79,14 @@ const api = {
   },
 
   /**
-   * 경기 상세(match + goals + photos)를 항상 최신으로 Sheets에서 가져옴.
+   * 경기 상세(match + goals)를 항상 최신으로 Sheets에서 가져옴.
    */
   async fetchMatchDetail(matchId) {
     const res = await fetch(`${APPS_SCRIPT_URL}?action=getMatch&matchId=${encodeURIComponent(matchId)}`);
     if (!res.ok) throw new Error(`서버 오류 (${res.status})`);
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || 'API 오류');
-    return json.data; // { match, goals, photos }
-  },
-
-  /**
-   * 사진 한 장을 base64로 Google Drive에 업로드. photos 시트에 자동 기록.
-   */
-  async uploadPhoto(matchId, dataUrl, fileName) {
-    const body = JSON.stringify({
-      action:   'uploadPhoto',
-      matchId,
-      base64:   dataUrl,
-      fileName: fileName || 'photo.jpg'
-    });
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method:  'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body
-    });
-    if (!res.ok) throw new Error(`서버 오류 (${res.status})`);
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error || '사진 업로드 실패');
-    return json.data; // { photo_id, match_id, drive_url }
+    return json.data; // { match, goals }
   },
 
   /**
@@ -117,8 +96,7 @@ const api = {
     const body = JSON.stringify({
       action: 'saveMatch',
       match:  matchData,
-      goals:  goalsData,
-      photos: []
+      goals:  goalsData
     });
     const res = await fetch(APPS_SCRIPT_URL, {
       method:  'POST',
