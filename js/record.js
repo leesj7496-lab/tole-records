@@ -619,12 +619,23 @@ const record = {
     const btn = document.querySelector('.btn-save');
     if (btn) { btn.textContent = '저장 중...'; btn.disabled = true; }
 
+    let matchId;
     try {
-      await api.saveMatch(matchData, goals);
+      matchId = await api.saveMatch(matchData, goals);
     } catch(e) {
       alert(`저장에 실패했습니다.\n${e.message}`);
       if (btn) { btn.textContent = '저장하기'; btn.disabled = false; }
       return;
+    }
+
+    // 사진 업로드 (경기 기록은 이미 저장됨 — 실패해도 계속 진행)
+    for (let i = 0; i < this.photos.length; i++) {
+      if (btn) btn.textContent = `사진 업로드 중... (${i + 1}/${this.photos.length})`;
+      try {
+        await api.uploadPhoto(matchId, this.photos[i].dataUrl, this.photos[i].name);
+      } catch(e) {
+        console.warn(`사진 ${i + 1} 업로드 실패:`, e.message);
+      }
     }
 
     this._clearDraft();

@@ -106,6 +106,12 @@
     </div>
   </div>
 
+  <!-- Photo Lightbox -->
+  <div id="photo-lightbox" class="photo-lightbox" onclick="match._closeLightbox()">
+    <button class="lightbox-close" onclick="event.stopPropagation(); match._closeLightbox()">&#10005;</button>
+    <img id="lightbox-img" class="lightbox-img" src="" alt="경기 사진">
+  </div>
+
   <script src="js/api.js"></script>
   <script src="js/match.js"></script>
   <script src="js/stats.js"></script>

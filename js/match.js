@@ -1,8 +1,9 @@
 const match = {
-  calYear:   new Date().getFullYear(),
-  calMonth:  new Date().getMonth(),      // 0-based
-  listYear:  new Date().getFullYear(),
-  listMonth: new Date().getMonth() + 1,  // 1-based
+  calYear:       new Date().getFullYear(),
+  calMonth:      new Date().getMonth(),      // 0-based
+  listYear:      new Date().getFullYear(),
+  listMonth:     new Date().getMonth() + 1,  // 1-based
+  _currentPhotos: [],
 
   // ── List View ────────────────────────────────────────────────
 
@@ -230,6 +231,8 @@ const match = {
       return;
     }
 
+    this._currentPhotos = photos;
+
     const { badge, cls } = this._resultInfo(m.result);
     const officials   = m.members.filter(n => !n.includes('(용병)'));
     const mercenaries = m.members.filter(n => n.includes('(용병)'));
@@ -264,6 +267,19 @@ const match = {
         <div class="summary-box">${this._esc(m.summary)}</div>
       </div>` : '';
 
+    const photosSection = photos.length ? `
+      <div class="detail-section">
+        <div class="detail-section-title">사진 (${photos.length}장)</div>
+        <div class="match-photos">
+          ${photos.map((p, i) => `
+            <div class="match-photo-thumb" onclick="match._openPhoto(${i})">
+              <img src="${this._thumbUrl(p.drive_url)}"
+                alt="경기 사진 ${i + 1}" loading="lazy"
+                onerror="this.closest('.match-photo-thumb').style.display='none'">
+            </div>`).join('')}
+        </div>
+      </div>` : '';
+
     container.innerHTML = `
       <div class="detail-hero">
         <div class="detail-date">${this._fmtDate(m.date)}</div>
@@ -285,7 +301,8 @@ const match = {
         ${goalItems}
       </div>
 
-      ${summarySection}`;
+      ${summarySection}
+      ${photosSection}`;
   },
 
   // ── Helpers ──────────────────────────────────────────────────
@@ -307,6 +324,32 @@ const match = {
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  },
+
+  _openPhoto(index) {
+    const photo = this._currentPhotos[index];
+    if (!photo) return;
+    const lb  = document.getElementById('photo-lightbox');
+    const img = document.getElementById('lightbox-img');
+    if (!lb || !img) { window.open(photo.drive_url, '_blank'); return; }
+    img.src = photo.drive_url;
+    lb.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  },
+
+  _closeLightbox() {
+    const lb  = document.getElementById('photo-lightbox');
+    const img = document.getElementById('lightbox-img');
+    if (!lb) return;
+    lb.classList.remove('open');
+    if (img) img.src = '';
+    document.body.style.overflow = '';
+  },
+
+  // drive_url → w400 썸네일 URL
+  _thumbUrl(url) {
+    const m = url.match(/[?&]id=([^&]+)/);
+    return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w400` : url;
   },
 
   _loadingHtml() {

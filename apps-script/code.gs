@@ -14,7 +14,8 @@
 
 // ── 상수 ──────────────────────────────────────────────────────────
 
-const SS_ID = '18Wu44N_fUD8oVIpYCsVb8fi9jWn-vPqOKSLwGPEyPVo';
+const SS_ID          = '18Wu44N_fUD8oVIpYCsVb8fi9jWn-vPqOKSLwGPEyPVo';
+const DRIVE_FOLDER_ID = '1JsqYt9JMvxYDKjHwKFQOtJDSZgvH08Pj';
 
 const SH = {
   MATCHES: 'matches',
@@ -188,6 +189,12 @@ function doPost(e) {
       return jsonOk(result);
     }
 
+    if (action === 'uploadPhoto') {
+      if (!body.matchId) return jsonErr('matchId가 필요합니다.');
+      if (!body.base64)  return jsonErr('base64 데이터가 필요합니다.');
+      return jsonOk(uploadPhoto(body.matchId, body.base64, body.fileName || 'photo.jpg'));
+    }
+
     return jsonErr('알 수 없는 action: ' + action);
 
   } catch (ex) {
@@ -305,4 +312,46 @@ function saveMatch(matchData, goalsData, photosData) {
   });
 
   return { match_id: matchId, saved_at: now };
+}
+
+/**
+ * base64 이미지를 Google Drive 폴더에 업로드하고 공개 URL을 photos 시트에 기록.
+ * @param {string} matchId   경기 ID
+ * @param {string} base64Data  data URL ('data:image/jpeg;base64,...') 또는 순수 base64
+ * @param {string} fileName  저장할 파일명
+ */
+function uploadPhoto(matchId, base64Data, fileName) {
+  var mimeType = 'image/jpeg';
+  var base64   = base64Data;
+
+  if (base64Data.indexOf('data:') === 0) {
+    var commaIdx = base64Data.indexOf(',');
+    var mMatch   = base64Data.substring(0, commaIdx).match(/data:([^;]+);base64/);
+    if (mMatch) mimeType = mMatch[1];
+    base64 = base64Data.substring(commaIdx + 1);
+  }
+
+  // 파일명에서 특수문자 제거 후 확장자 보장
+  var safeFileName = (fileName || 'photo').replace(/[^a-zA-Z0-9가-힣._-]/g, '_');
+  if (!safeFileName.match(/\.(jpe?g|png|gif|webp)$/i)) {
+    safeFileName += mimeType === 'image/png' ? '.png'
+                  : mimeType === 'image/gif' ? '.gif'
+                  : '.jpg';
+  }
+
+  var blob   = Utilities.newBlob(Utilities.base64Decode(base64), mimeType, safeFileName);
+  var folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
+  var file   = folder.createFile(blob);
+
+  // 링크 보유자 누구나 열람 가능
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  var fileId   = file.getId();
+  var driveUrl = 'https://drive.google.com/uc?export=view&id=' + fileId;
+
+  var photoSh = openSS().getSheetByName(SH.PHOTOS);
+  var photoId = genId('ph');
+  photoSh.appendRow([photoId, matchId, driveUrl]);
+
+  return { photo_id: photoId, match_id: matchId, drive_url: driveUrl };
 }

@@ -44,8 +44,8 @@ fc-tole/
 
 ## 데이터 저장
 
-현재는 **브라우저 localStorage**에 저장됩니다.  
-Google Sheets 연동 후 `api.js`의 데이터 레이어를 교체합니다.
+**Google Sheets** (+ Google Drive 사진) 와 연동되어 실시간으로 저장됩니다.  
+첫 진입 시 Sheets에서 데이터를 불러오고 브라우저 localStorage에 캐시합니다.
 
 ---
 
@@ -178,8 +178,47 @@ async saveMatch(matchData, goalsData) {
 |--------|----------------|------|
 | `GET`  | `?action=setup` | 시트 헤더 초기 생성 |
 | `GET`  | `?action=getMatches` | 전체 경기 목록 조회 |
-| `GET`  | `?action=getMatch&matchId=m001` | 경기 상세 조회 |
-| `POST` | `{ action: "saveMatch", match: {...}, goals: [...], photos: [...] }` | 새 경기 저장 |
+| `GET`  | `?action=getAll` | 경기 + 골 전체 일괄 조회 |
+| `GET`  | `?action=getMatch&matchId=m001` | 경기 상세 조회 (match + goals + photos) |
+| `POST` | `{ action: "saveMatch", match: {...}, goals: [...] }` | 새 경기 저장 |
+| `POST` | `{ action: "uploadPhoto", matchId: "...", base64: "data:image/jpeg;base64,...", fileName: "..." }` | 사진 Drive 업로드 |
+
+---
+
+---
+
+## Google Drive 사진 업로드
+
+경기 기록 저장 시 사진을 첨부하면 Google Drive에 자동 업로드됩니다.
+
+**Drive 폴더**: `1JsqYt9JMvxYDKjHwKFQOtJDSZgvH08Pj`
+
+- 업로드된 파일은 **"링크 보유자 누구나 보기"** 권한으로 공개됩니다.
+- 경기 기록 저장 후 사진을 순차 업로드합니다. 사진 업로드 실패해도 경기 기록은 보존됩니다.
+- 경기 상세 화면에서 썸네일 그리드로 표시되며, 사진 클릭 시 원본 크기 라이트박스로 확인할 수 있습니다.
+
+---
+
+## Apps Script 재배포 안내
+
+`apps-script/code.gs` 파일을 수정한 후에는 **반드시 재배포**해야 변경사항이 실제 API에 반영됩니다.
+
+### 재배포 순서
+
+1. [Apps Script 에디터](https://script.google.com) 열기
+2. `code.gs` 내용을 최신 버전으로 교체 후 **저장** (Ctrl+S)
+3. 우측 상단 **배포 > 배포 관리** 클릭
+4. 목록에서 현재 배포 항목의 **✏️ 수정** 버튼 클릭
+5. **버전: 새 버전** 선택 후 **배포** 클릭 → URL은 그대로 유지됨
+
+> **주의**: "기존 버전으로 유지"를 선택하면 코드 변경이 반영되지 않습니다. 반드시 새 버전을 선택하세요.
+
+### 재배포가 필요한 변경사항
+
+| 변경사항 | 필요 이유 |
+|----------|-----------|
+| `getAll` 엔드포인트 추가 | 통계 골·어시스트 집계용 |
+| `uploadPhoto` 엔드포인트 추가 | Google Drive 사진 업로드 |
 
 ---
 

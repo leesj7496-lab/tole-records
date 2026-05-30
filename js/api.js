@@ -90,6 +90,27 @@ const api = {
   },
 
   /**
+   * 사진 한 장을 base64로 Google Drive에 업로드. photos 시트에 자동 기록.
+   */
+  async uploadPhoto(matchId, dataUrl, fileName) {
+    const body = JSON.stringify({
+      action:   'uploadPhoto',
+      matchId,
+      base64:   dataUrl,
+      fileName: fileName || 'photo.jpg'
+    });
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body
+    });
+    if (!res.ok) throw new Error(`서버 오류 (${res.status})`);
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || '사진 업로드 실패');
+    return json.data; // { photo_id, match_id, drive_url }
+  },
+
+  /**
    * 새 경기를 Sheets에 저장. 완료 후 로컬 캐시를 무효화.
    */
   async saveMatch(matchData, goalsData) {
