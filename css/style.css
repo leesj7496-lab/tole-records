@@ -746,6 +746,53 @@ a { color: var(--gold); text-decoration: none; }
 .btn-step-edit:hover { background: rgba(201,162,39,0.1); }
 
 /* ========================================
+   Draft Prompt (3-option)
+======================================== */
+.draft-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 52px 24px;
+  max-width: 340px;
+  margin: 0 auto;
+}
+.draft-prompt-icon { font-size: 2.8rem; margin-bottom: 16px; }
+.draft-prompt-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--black);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+.draft-prompt-time {
+  font-size: 0.83rem;
+  color: var(--gray);
+  margin-bottom: 32px;
+}
+.draft-prompt-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--gray);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 12px;
+  border-radius: var(--radius);
+  transition: color 0.15s;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-ghost:hover { color: var(--black); }
+
+/* ========================================
    Photo Attachment
 ======================================== */
 .photo-preview {

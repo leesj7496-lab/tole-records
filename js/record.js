@@ -15,22 +15,41 @@ const record = {
     this.selectedResult = '';
     this.photos = [];
     this._saveTimer = null;
+    this._pendingDraft = null;
 
     const draft = this._loadDraft();
     if (draft) {
-      if (confirm(
-        `이전에 작성 중인 기록이 있습니다.\n` +
-        `마지막 저장: ${this._fmtDraftTime(draft.savedAt)}\n\n` +
-        `이어서 작성하시겠습니까?`
-      )) {
-        this._restoreDraft(draft);
-      } else {
-        this._clearDraft();
-        this._renderForm();
-      }
+      this._showDraftPrompt(draft);
     } else {
       this._renderForm();
     }
+  },
+
+  _showDraftPrompt(draft) {
+    this._pendingDraft = draft;
+    document.getElementById('record-form-content').innerHTML = `
+      <div class="draft-prompt">
+        <div class="draft-prompt-icon">📋</div>
+        <h3 class="draft-prompt-title">이전 작성 중인 기록이 있습니다</h3>
+        <p class="draft-prompt-time">마지막 저장: ${this._fmtDraftTime(draft.savedAt)}</p>
+        <div class="draft-prompt-actions">
+          <button class="btn btn-primary" onclick="record._resumeDraft()">이어서 작성</button>
+          <button class="btn btn-step" onclick="record._startFresh()">새로 작성</button>
+          <button class="btn btn-ghost" onclick="app.back()">돌아가기</button>
+        </div>
+      </div>`;
+  },
+
+  _resumeDraft() {
+    const draft = this._pendingDraft;
+    this._pendingDraft = null;
+    this._restoreDraft(draft);
+  },
+
+  _startFresh() {
+    this._clearDraft();
+    this._pendingDraft = null;
+    this._renderForm();
   },
 
   // ── Form Render ──────────────────────────────────────────────
