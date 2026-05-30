@@ -1,15 +1,32 @@
 const match = {
+  calYear:  new Date().getFullYear(),
+  calMonth: new Date().getMonth(), // 0-based
+
+  // ── List View ────────────────────────────────────────────────
 
   renderList() {
-    const container = document.getElementById('match-list');
-    const matches = api.getMatches();
+    const listEl = document.getElementById('match-list');
+    const calEl  = document.getElementById('match-calendar');
+    if (listEl) listEl.style.display = '';
+    if (calEl)  calEl.style.display  = 'none';
+
+    document.getElementById('btn-view-list')?.classList.add('active');
+    document.getElementById('btn-view-cal')?.classList.remove('active');
+
+    const matches = api.getMatches(); // oldest → newest
 
     if (!matches.length) {
-      container.innerHTML = `<div class="no-data"><div class="icon">⚽</div>기록된 경기가 없습니다.</div>`;
+      listEl.innerHTML = `<div class="no-data"><div class="icon">⚽</div>기록된 경기가 없습니다.</div>`;
       return;
     }
 
-    container.innerHTML = matches.map(m => this._cardHtml(m)).join('');
+    listEl.innerHTML = matches.map(m => this._cardHtml(m)).join('');
+
+    // 최신 경기가 바로 보이도록 맨 아래로 스크롤
+    setTimeout(() => {
+      const last = listEl.lastElementChild;
+      if (last) last.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 150);
   },
 
   _cardHtml(m) {
@@ -32,14 +49,107 @@ const match = {
       </div>`;
   },
 
+  // ── View Toggle ──────────────────────────────────────────────
+
+  setView(view) {
+    if (view === 'list') {
+      this.renderList();
+    } else {
+      document.getElementById('btn-view-list')?.classList.remove('active');
+      document.getElementById('btn-view-cal')?.classList.add('active');
+      document.getElementById('match-list').style.display  = 'none';
+      document.getElementById('match-calendar').style.display = '';
+      this.renderCalendar(this.calYear, this.calMonth);
+    }
+  },
+
+  // ── Calendar View ────────────────────────────────────────────
+
+  renderCalendar(year, month) {
+    this.calYear  = year;
+    this.calMonth = month;
+
+    const container = document.getElementById('match-calendar');
+    const matches   = api.getMatches();
+
+    // 날짜 → match_id 맵
+    const dateMap = {};
+    matches.forEach(m => { dateMap[m.date] = m.match_id; });
+
+    const MONTHS   = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+    const DAYS     = ['일','월','화','수','목','금','토'];
+    const pad      = n => String(n).padStart(2, '0');
+    const prefix   = `${year}-${pad(month + 1)}`;
+    const firstDow = new Date(year, month, 1).getDay();
+    const dimCur   = new Date(year, month + 1, 0).getDate();
+    const dimPrev  = new Date(year, month,  0).getDate();
+    const todayStr = new Date().toISOString().slice(0, 10);
+
+    // 셀 배열 구성
+    const cells = [];
+    for (let i = firstDow - 1; i >= 0; i--)
+      cells.push({ day: dimPrev - i, cur: false });
+    for (let d = 1; d <= dimCur; d++) {
+      const dateStr = `${prefix}-${pad(d)}`;
+      cells.push({ day: d, cur: true, dateStr, matchId: dateMap[dateStr] || null, isToday: dateStr === todayStr });
+    }
+    let nd = 1;
+    while (cells.length % 7 !== 0) cells.push({ day: nd++, cur: false });
+
+    const headers = DAYS.map(d => `<div class="cal-day-name">${d}</div>`).join('');
+
+    const cellsHtml = cells.map(c => {
+      if (!c.cur)
+        return `<div class="cal-day other-month"><span class="cal-day-num">${c.day}</span></div>`;
+
+      const cls   = ['cal-day', c.isToday ? 'today' : '', c.matchId ? 'has-match' : ''].filter(Boolean).join(' ');
+      const click = c.matchId ? `onclick="app.goMatchDetail('${c.matchId}')"` : '';
+      return `
+        <div class="${cls}" ${click}>
+          <span class="cal-day-num">${c.day}</span>
+          ${c.matchId ? '<span class="cal-match-dot"></span>' : ''}
+        </div>`;
+    }).join('');
+
+    const hasMatches = matches.some(m => m.date.startsWith(prefix));
+
+    container.innerHTML = `
+      <div class="calendar">
+        <div class="cal-header">
+          <button class="cal-nav-btn" onclick="match.prevMonth()">&#8249;</button>
+          <span class="cal-title">${year}년 ${MONTHS[month]}</span>
+          <button class="cal-nav-btn" onclick="match.nextMonth()">&#8250;</button>
+        </div>
+        <div class="cal-grid">
+          ${headers}
+          ${cellsHtml}
+        </div>
+        ${!hasMatches ? '<div class="cal-no-match">이번 달 경기 없음</div>' : ''}
+      </div>`;
+  },
+
+  prevMonth() {
+    let y = this.calYear, m = this.calMonth - 1;
+    if (m < 0) { m = 11; y--; }
+    this.renderCalendar(y, m);
+  },
+
+  nextMonth() {
+    let y = this.calYear, m = this.calMonth + 1;
+    if (m > 11) { m = 0; y++; }
+    this.renderCalendar(y, m);
+  },
+
+  // ── Detail View ──────────────────────────────────────────────
+
   renderDetail(matchId) {
     const container = document.getElementById('match-detail-content');
     const m = api.getMatch(matchId);
     if (!m) { container.innerHTML = '<div class="no-data">경기 정보를 찾을 수 없습니다.</div>'; return; }
 
-    const goals = api.getGoals(matchId);
+    const goals      = api.getGoals(matchId);
     const { badge, cls } = this._resultInfo(m.result);
-    const officials = m.members.filter(n => !n.includes('(용병)'));
+    const officials  = m.members.filter(n => !n.includes('(용병)'));
     const mercenaries = m.members.filter(n => n.includes('(용병)'));
 
     const memberChips = [
@@ -95,6 +205,8 @@ const match = {
 
       ${summarySection}`;
   },
+
+  // ── Helpers ──────────────────────────────────────────────────
 
   _resultInfo(result) {
     if (result === '승') return { badge: '승', cls: 'win' };

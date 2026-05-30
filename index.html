@@ -35,8 +35,13 @@
       <h2>경기별 기록</h2>
       <div></div>
     </div>
+    <div class="view-toggle-bar">
+      <button class="view-toggle-btn active" id="btn-view-list" onclick="match.setView('list')">리스트</button>
+      <button class="view-toggle-btn" id="btn-view-cal" onclick="match.setView('calendar')">캘린더</button>
+    </div>
     <div class="screen-body">
       <div id="match-list"></div>
+      <div id="match-calendar" style="display:none"></div>
     </div>
   </div>
 
