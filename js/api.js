@@ -56,35 +56,62 @@ const api = {
   async loadData() {
     if (this._loaded) return;
 
+    console.log('[API] loadData 시작 — URL:', APPS_SCRIPT_URL);
     let data;
     try {
       const res  = await fetch(`${APPS_SCRIPT_URL}?action=getAll`);
-      const json = await res.json();
+      const text = await res.text();
+      console.log('[API] getAll 응답 — HTTP', res.status, '| 최종 URL:', res.url);
+      console.log('[API] 응답 본문 (앞 300자):', text.slice(0, 300));
+
+      let json;
+      try {
+        json = JSON.parse(text);
+      } catch(_) {
+        // GAS가 HTML 오류 페이지를 반환한 경우 (배포 URL 만료, 권한 문제 등)
+        throw new Error('GAS 응답이 JSON이 아닙니다. 배포 URL 또는 실행 권한을 확인하세요.');
+      }
+
       if (json.ok) {
         data = json.data;
+        console.log('[API] getAll 성공 — 경기', data.matches?.length, '건 / 골', data.goals?.length, '건');
       } else {
-        // getAll 없는 구버전 배포 폴백: matches만 가져옴
+        // getAll 없는 구버전 배포 폴백
+        console.warn('[API] getAll ok:false — getMatches 폴백 시도. 사유:', json.error);
         const res2  = await fetch(`${APPS_SCRIPT_URL}?action=getMatches`);
-        const json2 = await res2.json();
+        const text2 = await res2.text();
+        console.log('[API] getMatches 응답 (앞 300자):', text2.slice(0, 300));
+        let json2;
+        try { json2 = JSON.parse(text2); }
+        catch(_) { throw new Error('GAS getMatches 응답이 JSON이 아닙니다.'); }
         if (!json2.ok) throw new Error(json2.error || 'API 오류');
         data = { matches: json2.data, goals: [] };
+        console.log('[API] getMatches 폴백 성공 — 경기', data.matches?.length, '건');
       }
     } catch(e) {
-      const msg = e instanceof TypeError ? '네트워크 오류' : (e.message || 'API 오류');
+      console.error('[API] loadData 실패:', e.message);
+      const msg = e instanceof TypeError
+        ? '네트워크 오류 (CORS 또는 인터넷 연결 확인)'
+        : (e.message || 'API 오류');
       throw new Error(msg);
     }
 
     this._save(data);
     this._loaded = true;
+    console.log('[API] loadData 완료 — localStorage 캐시 저장됨');
   },
 
   /**
-   * 경기 상세(match + goals)를 항상 최신으로 Sheets에서 가져옴.
+   * 경기 상세(match + goals)를 Sheets에서 가져옴.
    */
   async fetchMatchDetail(matchId) {
-    const res = await fetch(`${APPS_SCRIPT_URL}?action=getMatch&matchId=${encodeURIComponent(matchId)}`);
-    if (!res.ok) throw new Error(`서버 오류 (${res.status})`);
-    const json = await res.json();
+    console.log('[API] fetchMatchDetail — matchId:', matchId);
+    const res  = await fetch(`${APPS_SCRIPT_URL}?action=getMatch&matchId=${encodeURIComponent(matchId)}`);
+    const text = await res.text();
+    console.log('[API] getMatch 응답 — HTTP', res.status, '| 본문 (앞 300자):', text.slice(0, 300));
+    let json;
+    try { json = JSON.parse(text); }
+    catch(_) { throw new Error('GAS getMatch 응답이 JSON이 아닙니다.'); }
     if (!json.ok) throw new Error(json.error || 'API 오류');
     return json.data; // { match, goals }
   },
