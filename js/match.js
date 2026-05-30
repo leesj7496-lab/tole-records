@@ -72,9 +72,9 @@ const match = {
     const container = document.getElementById('match-calendar');
     const matches   = api.getMatches();
 
-    // 날짜 → match_id 맵
+    // 날짜 → { id, result } 맵
     const dateMap = {};
-    matches.forEach(m => { dateMap[m.date] = m.match_id; });
+    matches.forEach(m => { dateMap[m.date] = { id: m.match_id, result: m.result }; });
 
     const MONTHS   = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
     const DAYS     = ['일','월','화','수','목','금','토'];
@@ -91,7 +91,8 @@ const match = {
       cells.push({ day: dimPrev - i, cur: false });
     for (let d = 1; d <= dimCur; d++) {
       const dateStr = `${prefix}-${pad(d)}`;
-      cells.push({ day: d, cur: true, dateStr, matchId: dateMap[dateStr] || null, isToday: dateStr === todayStr });
+      const entry   = dateMap[dateStr] || null;
+      cells.push({ day: d, cur: true, dateStr, matchId: entry?.id || null, result: entry?.result || null, isToday: dateStr === todayStr });
     }
     let nd = 1;
     while (cells.length % 7 !== 0) cells.push({ day: nd++, cur: false });
@@ -102,12 +103,12 @@ const match = {
       if (!c.cur)
         return `<div class="cal-day other-month"><span class="cal-day-num">${c.day}</span></div>`;
 
-      const cls   = ['cal-day', c.isToday ? 'today' : '', c.matchId ? 'has-match' : ''].filter(Boolean).join(' ');
+      const resultCls = c.result === '승' ? 'match-win' : c.result === '무' ? 'match-draw' : c.result === '패' ? 'match-loss' : '';
+      const cls   = ['cal-day', c.isToday ? 'today' : '', resultCls].filter(Boolean).join(' ');
       const click = c.matchId ? `onclick="app.goMatchDetail('${c.matchId}')"` : '';
       return `
         <div class="${cls}" ${click}>
           <span class="cal-day-num">${c.day}</span>
-          ${c.matchId ? '<span class="cal-match-dot"></span>' : ''}
         </div>`;
     }).join('');
 
