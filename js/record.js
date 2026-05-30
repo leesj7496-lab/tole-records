@@ -49,138 +49,209 @@ const record = {
       <div class="record-form">
         <div id="draft-indicator" class="draft-indicator"></div>
 
-        <!-- STEP 1: 기본 정보 (날짜/장소/상대팀) -->
-        <div class="form-section" id="section-basic">
-          <div class="form-section-title">기본 정보</div>
-
-          <div class="form-group">
-            <label class="form-label">날짜</label>
-            <input type="date" id="rec-date" class="form-input" value="${today}"
-              oninput="record._autosaveDraft()">
+        <!-- STEP 1: 기본 정보 -->
+        <div class="step-block" id="step-1">
+          <div class="step-summary-bar" id="step-1-summary-bar">
+            <div class="step-summary-content">
+              <span class="step-badge">1</span>
+              <span id="step-1-summary-text" class="step-summary-label"></span>
+            </div>
+            <button type="button" class="btn-step-edit" onclick="record.expandStep(1)">수정</button>
           </div>
-          <div class="form-group">
-            <label class="form-label">장소</label>
-            <input type="text" id="rec-location" class="form-input" placeholder="경기 장소"
-              oninput="record._autosaveDraft()">
+          <div class="step-form" id="step-1-form">
+            <div class="form-section">
+              <div class="form-section-title">기본 정보</div>
+              <div class="form-group">
+                <label class="form-label">날짜</label>
+                <input type="date" id="rec-date" class="form-input" value="${today}"
+                  oninput="record._autosaveDraft()">
+              </div>
+              <div class="form-group">
+                <label class="form-label">장소</label>
+                <input type="text" id="rec-location" class="form-input" placeholder="경기 장소"
+                  oninput="record._autosaveDraft()">
+              </div>
+              <div class="form-group">
+                <label class="form-label">상대팀</label>
+                <input type="text" id="rec-opponent" class="form-input" placeholder="상대팀 이름"
+                  oninput="record._autosaveDraft()">
+              </div>
+              <button type="button" class="btn btn-step" onclick="record.nextStep(1)">참여 멤버 입력 →</button>
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">상대팀</label>
-            <input type="text" id="rec-opponent" class="form-input" placeholder="상대팀 이름"
-              oninput="record._autosaveDraft()">
-          </div>
-
-          <button type="button" class="btn btn-step" id="btn-step-members"
-            onclick="record.showStep('members')">참여 멤버 입력 →</button>
         </div>
 
         <!-- STEP 2: 참여 멤버 -->
-        <div class="form-section step-hidden" id="section-members">
-          <div class="form-section-title">참여 멤버</div>
-          <div class="members-grid" id="members-grid">${checkboxes}</div>
-          <div id="mercenary-list" class="mercenary-list"></div>
-          <div class="step-actions">
-            <button type="button" class="btn btn-secondary" onclick="record.addMercenary()">+ 용병 추가</button>
-            <button type="button" class="btn btn-step" id="btn-step-goals"
-              onclick="record.showStep('goals')">공격 포인트 입력 →</button>
+        <div class="step-block" id="step-2">
+          <div class="step-summary-bar" id="step-2-summary-bar">
+            <div class="step-summary-content">
+              <span class="step-badge">2</span>
+              <span id="step-2-summary-text" class="step-summary-label"></span>
+            </div>
+            <button type="button" class="btn-step-edit" onclick="record.expandStep(2)">수정</button>
+          </div>
+          <div class="step-form" id="step-2-form" style="display:none">
+            <div class="form-section">
+              <div class="form-section-title">참여 멤버</div>
+              <div class="members-grid" id="members-grid">${checkboxes}</div>
+              <div id="mercenary-list" class="mercenary-list"></div>
+              <div class="step-actions">
+                <button type="button" class="btn btn-secondary" onclick="record.addMercenary()">+ 용병 추가</button>
+                <button type="button" class="btn btn-step" onclick="record.nextStep(2)">경기 내용 입력 →</button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- STEP 3+: 공격 포인트 / 총평 / 사진 / 결과 / 저장 -->
-        <div id="section-rest" class="step-hidden">
-
-          <div class="form-section">
-            <div class="form-section-title">공격 포인트</div>
-            <div id="goals-container"></div>
-            <button type="button" class="btn btn-secondary" onclick="record.addGoalEntry()">+ 골 추가</button>
-          </div>
-
-          <div class="form-section">
-            <div class="form-section-title">
-              총평 <span class="optional">(선택)</span>
+        <!-- STEP 3: 경기 내용 (공격포인트 + 총평 + 사진) -->
+        <div class="step-block" id="step-3">
+          <div class="step-summary-bar" id="step-3-summary-bar">
+            <div class="step-summary-content">
+              <span class="step-badge">3</span>
+              <span id="step-3-summary-text" class="step-summary-label"></span>
             </div>
-            <textarea id="rec-summary" class="form-textarea" placeholder="경기 총평을 입력하세요..."
-              oninput="record._autosaveDraft()"></textarea>
+            <button type="button" class="btn-step-edit" onclick="record.expandStep(3)">수정</button>
           </div>
-
-          <div class="form-section">
-            <div class="form-section-title">
-              사진 첨부 <span class="optional">(선택, 최대 5장)</span>
+          <div class="step-form" id="step-3-form" style="display:none">
+            <div class="form-section">
+              <div class="form-section-title">공격 포인트</div>
+              <div id="goals-container"></div>
+              <button type="button" class="btn btn-secondary" onclick="record.addGoalEntry()">+ 골 추가</button>
             </div>
-            <div id="photo-preview" class="photo-preview"></div>
-            <div class="photo-actions">
-              <input type="file" id="photo-input" accept="image/*" multiple style="display:none"
-                onchange="record.addPhotos(this.files)">
-              <button type="button" class="btn btn-secondary" id="photo-add-btn"
-                onclick="document.getElementById('photo-input').click()">+ 사진 추가</button>
-              <span id="photo-count" class="photo-count">0 / 5</span>
+            <div class="form-section">
+              <div class="form-section-title">총평 <span class="optional">(선택)</span></div>
+              <textarea id="rec-summary" class="form-textarea" placeholder="경기 총평을 입력하세요..."
+                oninput="record._autosaveDraft()"></textarea>
             </div>
-          </div>
-
-          <div class="form-section">
-            <div class="form-section-title">결과</div>
-            <div class="form-group">
-              <label class="form-label">스코어 (우리 팀 : 상대 팀)</label>
-              <div class="score-row">
-                <input type="number" id="rec-our-score" class="form-input" min="0" placeholder="0"
-                  oninput="record._autoResult()">
-                <span class="score-sep">:</span>
-                <input type="number" id="rec-opp-score" class="form-input" min="0" placeholder="0"
-                  oninput="record._autoResult()">
+            <div class="form-section">
+              <div class="form-section-title">사진 첨부 <span class="optional">(선택, 최대 5장)</span></div>
+              <div id="photo-preview" class="photo-preview"></div>
+              <div class="photo-actions">
+                <input type="file" id="photo-input" accept="image/*" multiple style="display:none"
+                  onchange="record.addPhotos(this.files)">
+                <button type="button" class="btn btn-secondary" id="photo-add-btn"
+                  onclick="document.getElementById('photo-input').click()">+ 사진 추가</button>
+                <span id="photo-count" class="photo-count">0 / 5</span>
               </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">승 / 무 / 패</label>
-              <div class="result-row">
-                <button type="button" class="btn-result" data-result="승"
-                  onclick="record._setResult('승')">승</button>
-                <button type="button" class="btn-result" data-result="무"
-                  onclick="record._setResult('무')">무</button>
-                <button type="button" class="btn-result" data-result="패"
-                  onclick="record._setResult('패')">패</button>
+            <button type="button" class="btn btn-step" onclick="record.nextStep(3)">결과 입력 →</button>
+          </div>
+        </div>
+
+        <!-- STEP 4: 결과 -->
+        <div class="step-block" id="step-4">
+          <div class="step-form" id="step-4-form" style="display:none">
+            <div class="form-section">
+              <div class="form-section-title">결과</div>
+              <div class="form-group">
+                <label class="form-label">스코어 (우리 팀 : 상대 팀)</label>
+                <div class="score-row">
+                  <input type="number" id="rec-our-score" class="form-input" min="0" placeholder="0"
+                    oninput="record._autoResult()">
+                  <span class="score-sep">:</span>
+                  <input type="number" id="rec-opp-score" class="form-input" min="0" placeholder="0"
+                    oninput="record._autoResult()">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">승 / 무 / 패</label>
+                <div class="result-row">
+                  <button type="button" class="btn-result" data-result="승"
+                    onclick="record._setResult('승')">승</button>
+                  <button type="button" class="btn-result" data-result="무"
+                    onclick="record._setResult('무')">무</button>
+                  <button type="button" class="btn-result" data-result="패"
+                    onclick="record._setResult('패')">패</button>
+                </div>
               </div>
             </div>
+            <button type="button" class="btn btn-primary btn-save" onclick="record.save()">저장하기</button>
           </div>
-
-          <button type="button" class="btn btn-primary btn-save" onclick="record.save()">저장하기</button>
         </div>
 
       </div>`;
   },
 
-  showStep(step) {
-    if (step === 'members') {
-      const el = document.getElementById('section-members');
-      el.classList.remove('step-hidden');
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      document.getElementById('btn-step-members').style.display = 'none';
-    } else if (step === 'goals') {
-      const el = document.getElementById('section-rest');
-      el.classList.remove('step-hidden');
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      document.getElementById('btn-step-goals').style.display = 'none';
+  // ── Step Navigation ──────────────────────────────────────────
+
+  nextStep(n) {
+    const summaryText = this[`_getStep${n}Summary`]();
+    document.getElementById(`step-${n}-summary-text`).textContent = summaryText;
+    document.getElementById(`step-${n}-summary-bar`).style.display = 'flex';
+    document.getElementById(`step-${n}-form`).style.display = 'none';
+
+    const nextForm = document.getElementById(`step-${n + 1}-form`);
+    if (nextForm) {
+      nextForm.style.display = 'block';
+      setTimeout(() => nextForm.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     }
-    this._autosaveDraft();
+
+    this._autosaveDraftNow();
+  },
+
+  expandStep(n) {
+    document.getElementById(`step-${n}-summary-bar`).style.display = 'none';
+    const form = document.getElementById(`step-${n}-form`);
+    form.style.display = 'block';
+    setTimeout(() => form.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  },
+
+  _getStep1Summary() {
+    const date = document.getElementById('rec-date')?.value || '';
+    const loc  = document.getElementById('rec-location')?.value || '';
+    const opp  = document.getElementById('rec-opponent')?.value || '';
+    const parts = [];
+    if (date) parts.push(date.replace(/-/g, '.'));
+    if (loc)  parts.push(loc);
+    if (opp)  parts.push('vs ' + opp);
+    return parts.join(' · ') || '기본 정보';
+  },
+
+  _getStep2Summary() {
+    const checked = document.querySelectorAll('.member-check:checked').length;
+    const mercs   = this.mercenaries.length;
+    const total   = checked + mercs;
+    let text = `참여 멤버 ${total}명 선택됨`;
+    if (mercs > 0) text += ` (용병 ${mercs}명 포함)`;
+    return text;
+  },
+
+  _getStep3Summary() {
+    const goals = this.goalEntries.length;
+    const photos = this.photos.length;
+    const hasSummary = !!(document.getElementById('rec-summary')?.value?.trim());
+    const parts = [`골 ${goals}개`];
+    if (photos > 0)  parts.push(`사진 ${photos}장`);
+    if (hasSummary)  parts.push('총평 작성');
+    return parts.join(' · ');
   },
 
   // ── Draft / Autosave ──────────────────────────────────────────
 
   _autosaveDraft() {
     clearTimeout(this._saveTimer);
-    this._saveTimer = setTimeout(() => {
-      try {
-        const data = this._collectDraftData();
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
-        this._updateDraftIndicator(data.savedAt);
-      } catch (e) { /* localStorage quota exceeded — silent */ }
-    }, 600);
+    this._saveTimer = setTimeout(() => this._autosaveDraftNow(), 600);
+  },
+
+  _autosaveDraftNow() {
+    try {
+      const data = this._collectDraftData();
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+      this._updateDraftIndicator(data.savedAt);
+    } catch (e) { /* quota exceeded */ }
   },
 
   _collectDraftData() {
-    const visibleSections = [];
-    if (!document.getElementById('section-members')?.classList.contains('step-hidden'))
-      visibleSections.push('members');
-    if (!document.getElementById('section-rest')?.classList.contains('step-hidden'))
-      visibleSections.push('goals');
+    const collapsedSteps = [];
+    const stepSummaries  = {};
+    for (let i = 1; i <= 3; i++) {
+      const bar = document.getElementById(`step-${i}-summary-bar`);
+      if (bar && bar.style.display === 'flex') {
+        collapsedSteps.push(i);
+        const txt = document.getElementById(`step-${i}-summary-text`)?.textContent;
+        if (txt) stepSummaries[i] = txt;
+      }
+    }
 
     const checkedMembers = [...document.querySelectorAll('.member-check:checked')].map(el => el.value);
 
@@ -188,7 +259,7 @@ const record = {
       id:          g.id,
       scorer:      document.getElementById('scorer-' + g.id)?.value || '',
       assist:      document.getElementById('assist-' + g.id)?.value || '없음',
-      description: document.getElementById('desc-' + g.id)?.value  || ''
+      description: document.getElementById('desc-'   + g.id)?.value || ''
     }));
 
     return {
@@ -204,7 +275,8 @@ const record = {
       goalCounter:    this.goalCounter,
       goalEntries:    goalsData,
       summary:        document.getElementById('rec-summary')?.value   || '',
-      visibleSections
+      collapsedSteps,
+      stepSummaries
     };
   },
 
@@ -239,25 +311,19 @@ const record = {
     set('rec-opp-score', draft.oppScore);
     set('rec-summary',   draft.summary);
 
-    // 결과 버튼
     if (draft.selectedResult) this._setResultSilent(draft.selectedResult);
 
-    // 멤버 체크박스
     document.querySelectorAll('.member-check').forEach(cb => {
       cb.checked = (draft.checkedMembers || []).includes(cb.value);
     });
 
-    // 용병 목록
     this._renderMercenaryList();
 
-    // 골 항목 복원
     (draft.goalEntries || []).forEach(g => {
       this.goalEntries.push({ id: g.id, scorer: g.scorer, assist: g.assist, description: g.description });
       this._renderGoalEntry(g.id);
     });
     this._updateAllDropdowns();
-
-    // 드롭다운 채우기 (업데이트 후 다시 선택값 세팅)
     (draft.goalEntries || []).forEach(g => {
       const scorer = document.getElementById('scorer-' + g.id);
       const assist = document.getElementById('assist-' + g.id);
@@ -267,14 +333,28 @@ const record = {
       if (desc)   desc.value   = g.description;
     });
 
-    // 단계 복원
-    (draft.visibleSections || []).forEach(step => {
-      const sectionId = step === 'members' ? 'section-members' : 'section-rest';
-      const btnId     = step === 'members' ? 'btn-step-members' : 'btn-step-goals';
-      document.getElementById(sectionId)?.classList.remove('step-hidden');
-      const btn = document.getElementById(btnId);
-      if (btn) btn.style.display = 'none';
+    // 단계 상태 복원
+    const collapsed = draft.collapsedSteps || [];
+    collapsed.forEach(n => {
+      const bar  = document.getElementById(`step-${n}-summary-bar`);
+      const form = document.getElementById(`step-${n}-form`);
+      const txt  = document.getElementById(`step-${n}-summary-text`);
+      if (bar)  bar.style.display  = 'flex';
+      if (form) form.style.display = 'none';
+      if (txt && draft.stepSummaries?.[n]) txt.textContent = draft.stepSummaries[n];
     });
+
+    // 현재 활성 단계만 노출
+    const activeStep = collapsed.length > 0 ? Math.max(...collapsed) + 1 : 1;
+    for (let i = 1; i <= 4; i++) {
+      const form = document.getElementById(`step-${i}-form`);
+      if (!form) continue;
+      if (i === activeStep) {
+        form.style.display = 'block';
+      } else if (!collapsed.includes(i)) {
+        form.style.display = 'none';
+      }
+    }
 
     this._updateDraftIndicator(draft.savedAt);
   },
@@ -487,11 +567,11 @@ const record = {
     const oppScore = document.getElementById('rec-opp-score').value;
     const summary  = document.getElementById('rec-summary').value.trim();
 
-    if (!date)                                    { alert('날짜를 입력하세요.'); return; }
-    if (!location)                                { alert('장소를 입력하세요.'); return; }
-    if (!opponent)                                { alert('상대팀 이름을 입력하세요.'); return; }
-    if (ourScore === '' || oppScore === '')        { alert('스코어를 입력하세요.'); return; }
-    if (!this.selectedResult)                     { alert('결과를 선택하세요.'); return; }
+    if (!date)                              { alert('날짜를 입력하세요.'); return; }
+    if (!location)                          { alert('장소를 입력하세요.'); return; }
+    if (!opponent)                          { alert('상대팀 이름을 입력하세요.'); return; }
+    if (ourScore === '' || oppScore === '') { alert('스코어를 입력하세요.'); return; }
+    if (!this.selectedResult)              { alert('결과를 선택하세요.'); return; }
 
     const checked = [...document.querySelectorAll('.member-check:checked')].map(el => el.value);
     const mercs   = this.mercenaries.map(m => m + '(용병)');
@@ -517,7 +597,7 @@ const record = {
       members, summary
     };
 
-    // TODO: this.photos 에 첨부 사진 DataURL 보관 중 — Google Drive 연동 시 업로드 처리
+    // TODO: this.photos — Google Drive 연동 시 업로드 처리
     api.saveMatch(matchData, goals);
     this._clearDraft();
     alert('경기 기록이 저장됐습니다!');

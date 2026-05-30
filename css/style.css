@@ -688,6 +688,63 @@ a { color: var(--gold); text-decoration: none; }
   margin-top: 10px;
 }
 
+.step-block { margin-bottom: 8px; }
+
+.step-summary-bar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--dark);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 11px 14px;
+}
+
+.step-summary-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.step-badge {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--black);
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.step-summary-label {
+  font-size: 0.85rem;
+  color: var(--gray-lt);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-step-edit {
+  font-size: 0.78rem;
+  color: var(--gold);
+  font-weight: 600;
+  padding: 4px 10px;
+  border: 1px solid var(--gold);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  transition: background 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+.btn-step-edit:hover { background: rgba(201,162,39,0.1); }
+
 /* ========================================
    Photo Attachment
 ======================================== */
