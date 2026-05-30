@@ -27,7 +27,8 @@ const record = {
     document.getElementById('record-form-content').innerHTML = `
       <div class="record-form">
 
-        <div class="form-section">
+        <!-- STEP 1: 기본 정보 -->
+        <div class="form-section" id="section-basic">
           <div class="form-section-title">기본 정보</div>
 
           <div class="form-group">
@@ -63,46 +64,72 @@ const record = {
                 onclick="record._setResult('패')">패</button>
             </div>
           </div>
+
+          <button type="button" class="btn btn-step" id="btn-step-members"
+            onclick="record.showStep('members')">참여 멤버 입력 →</button>
         </div>
 
-        <div class="form-section">
+        <!-- STEP 2: 참여 멤버 -->
+        <div class="form-section step-hidden" id="section-members">
           <div class="form-section-title">참여 멤버</div>
           <div class="members-grid" id="members-grid">${checkboxes}</div>
           <div id="mercenary-list" class="mercenary-list"></div>
-          <button type="button" class="btn btn-secondary" onclick="record.addMercenary()">+ 용병 추가</button>
-        </div>
-
-        <div class="form-section">
-          <div class="form-section-title">공격 포인트</div>
-          <div id="goals-container"></div>
-          <button type="button" class="btn btn-secondary" onclick="record.addGoalEntry()">+ 골 추가</button>
-        </div>
-
-        <div class="form-section">
-          <div class="form-section-title">
-            총평
-            <span class="optional">(선택)</span>
-          </div>
-          <textarea id="rec-summary" class="form-textarea" placeholder="경기 총평을 입력하세요..."></textarea>
-        </div>
-
-        <div class="form-section">
-          <div class="form-section-title">
-            사진 첨부
-            <span class="optional">(선택, 최대 5장)</span>
-          </div>
-          <div id="photo-preview" class="photo-preview"></div>
-          <div class="photo-actions">
-            <input type="file" id="photo-input" accept="image/*" multiple style="display:none"
-              onchange="record.addPhotos(this.files)">
-            <button type="button" class="btn btn-secondary" id="photo-add-btn"
-              onclick="document.getElementById('photo-input').click()">+ 사진 추가</button>
-            <span id="photo-count" class="photo-count">0 / 5</span>
+          <div class="step-actions">
+            <button type="button" class="btn btn-secondary" onclick="record.addMercenary()">+ 용병 추가</button>
+            <button type="button" class="btn btn-step" id="btn-step-goals"
+              onclick="record.showStep('goals')">공격 포인트 입력 →</button>
           </div>
         </div>
 
-        <button type="button" class="btn btn-primary btn-save" onclick="record.save()">저장하기</button>
+        <!-- STEP 3+: 공격 포인트 / 총평 / 사진 / 저장 -->
+        <div id="section-rest" class="step-hidden">
+          <div class="form-section">
+            <div class="form-section-title">공격 포인트</div>
+            <div id="goals-container"></div>
+            <button type="button" class="btn btn-secondary" onclick="record.addGoalEntry()">+ 골 추가</button>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">
+              총평
+              <span class="optional">(선택)</span>
+            </div>
+            <textarea id="rec-summary" class="form-textarea" placeholder="경기 총평을 입력하세요..."></textarea>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">
+              사진 첨부
+              <span class="optional">(선택, 최대 5장)</span>
+            </div>
+            <div id="photo-preview" class="photo-preview"></div>
+            <div class="photo-actions">
+              <input type="file" id="photo-input" accept="image/*" multiple style="display:none"
+                onchange="record.addPhotos(this.files)">
+              <button type="button" class="btn btn-secondary" id="photo-add-btn"
+                onclick="document.getElementById('photo-input').click()">+ 사진 추가</button>
+              <span id="photo-count" class="photo-count">0 / 5</span>
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-primary btn-save" onclick="record.save()">저장하기</button>
+        </div>
+
       </div>`;
+  },
+
+  showStep(step) {
+    if (step === 'members') {
+      const el = document.getElementById('section-members');
+      el.classList.remove('step-hidden');
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('btn-step-members').style.display = 'none';
+    } else if (step === 'goals') {
+      const el = document.getElementById('section-rest');
+      el.classList.remove('step-hidden');
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('btn-step-goals').style.display = 'none';
+    }
   },
 
   _autoResult() {

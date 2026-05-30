@@ -655,6 +655,29 @@ a { color: var(--gold); text-decoration: none; }
   margin-top: 4px;
 }
 
+.btn-step {
+  width: 100%;
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--black);
+  color: var(--white);
+  border-radius: var(--radius-sm);
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  transition: opacity 0.15s;
+}
+.btn-step:hover { opacity: 0.8; }
+
+.step-hidden { display: none; }
+
+.step-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
 /* ========================================
    Photo Attachment
 ======================================== */
