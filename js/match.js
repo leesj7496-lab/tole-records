@@ -1,32 +1,13 @@
 const match = {
-  calYear:  new Date().getFullYear(),
-  calMonth: new Date().getMonth(), // 0-based
+  calYear:   new Date().getFullYear(),
+  calMonth:  new Date().getMonth(),      // 0-based
+  listYear:  new Date().getFullYear(),
+  listMonth: new Date().getMonth() + 1,  // 1-based
 
   // ── List View ────────────────────────────────────────────────
 
   renderList() {
-    const listEl = document.getElementById('match-list');
-    const calEl  = document.getElementById('match-calendar');
-    if (listEl) listEl.style.display = '';
-    if (calEl)  calEl.style.display  = 'none';
-
-    document.getElementById('btn-view-list')?.classList.add('active');
-    document.getElementById('btn-view-cal')?.classList.remove('active');
-
-    const matches = api.getMatches(); // oldest → newest
-
-    if (!matches.length) {
-      listEl.innerHTML = `<div class="no-data"><div class="icon">⚽</div>기록된 경기가 없습니다.</div>`;
-      return;
-    }
-
-    listEl.innerHTML = matches.map(m => this._cardHtml(m)).join('');
-
-    // 최신 경기가 바로 보이도록 맨 아래로 스크롤
-    setTimeout(() => {
-      const last = listEl.lastElementChild;
-      if (last) last.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 150);
+    this.setView('list');
   },
 
   _cardHtml(m) {
@@ -52,15 +33,83 @@ const match = {
   // ── View Toggle ──────────────────────────────────────────────
 
   setView(view) {
+    const listEl   = document.getElementById('match-list');
+    const calEl    = document.getElementById('match-calendar');
+    const filterEl = document.getElementById('list-filter-bar');
+    const listBtn  = document.getElementById('btn-view-list');
+    const calBtn   = document.getElementById('btn-view-cal');
+
     if (view === 'list') {
-      this.renderList();
+      listBtn?.classList.add('active');
+      calBtn?.classList.remove('active');
+      if (listEl)   listEl.style.display   = '';
+      if (calEl)    calEl.style.display    = 'none';
+      if (filterEl) filterEl.style.display = '';
+      this._renderFilterBar();
+      this._renderFilteredList();
     } else {
-      document.getElementById('btn-view-list')?.classList.remove('active');
-      document.getElementById('btn-view-cal')?.classList.add('active');
-      document.getElementById('match-list').style.display  = 'none';
-      document.getElementById('match-calendar').style.display = '';
+      listBtn?.classList.remove('active');
+      calBtn?.classList.add('active');
+      if (listEl)   listEl.style.display   = 'none';
+      if (calEl)    calEl.style.display    = '';
+      if (filterEl) filterEl.style.display = 'none';
       this.renderCalendar(this.calYear, this.calMonth);
     }
+  },
+
+  _renderFilterBar() {
+    const bar = document.getElementById('list-filter-bar');
+    if (!bar) return;
+
+    const curYear  = new Date().getFullYear();
+    const startYear = 2024;
+
+    const yearOpts = [];
+    for (let y = startYear; y <= curYear; y++) {
+      yearOpts.push(`<option value="${y}" ${y === this.listYear ? 'selected' : ''}>${y}년</option>`);
+    }
+
+    const monthOpts = [];
+    for (let m = 1; m <= 12; m++) {
+      monthOpts.push(`<option value="${m}" ${m === this.listMonth ? 'selected' : ''}>${m}월</option>`);
+    }
+
+    bar.innerHTML = `
+      <div class="list-filter">
+        <select class="filter-select" id="filter-year" onchange="match.onFilterChange()">
+          ${yearOpts.join('')}
+        </select>
+        <select class="filter-select" id="filter-month" onchange="match.onFilterChange()">
+          ${monthOpts.join('')}
+        </select>
+      </div>`;
+  },
+
+  onFilterChange() {
+    this.listYear  = parseInt(document.getElementById('filter-year').value);
+    this.listMonth = parseInt(document.getElementById('filter-month').value);
+    this._renderFilteredList();
+  },
+
+  _renderFilteredList() {
+    const listEl = document.getElementById('match-list');
+    if (!listEl) return;
+
+    const pad    = n => String(n).padStart(2, '0');
+    const prefix = `${this.listYear}-${pad(this.listMonth)}`;
+    const matches = api.getMatches().filter(m => m.date.startsWith(prefix));
+
+    if (!matches.length) {
+      listEl.innerHTML = `<div class="no-data"><div class="icon">📋</div>해당 월에 경기가 없습니다.</div>`;
+      return;
+    }
+
+    listEl.innerHTML = matches.map(m => this._cardHtml(m)).join('');
+
+    setTimeout(() => {
+      const last = listEl.lastElementChild;
+      if (last) last.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 150);
   },
 
   // ── Calendar View ────────────────────────────────────────────
