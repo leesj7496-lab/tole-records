@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>똘레랑스 기록실</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ===== SCREEN: MAIN ===== -->
+  <div id="screen-main" class="screen active">
+    <div class="main-container">
+      <div class="logo-wrap" id="logo-wrap">
+        <img src="assets/logo.jpg" alt="FC 똘레랑스" class="logo-img"
+          onerror="document.getElementById('logo-wrap').classList.add('logo-error')">
+        <div class="logo-fallback">FC</div>
+      </div>
+      <h1 class="main-title">똘레랑스 기록실</h1>
+      <p class="main-subtitle">FC 똘레랑스 공식 경기 기록소</p>
+      <div class="main-buttons">
+        <button class="btn btn-primary" onclick="app.goMatches()">경기별 기록</button>
+        <button class="btn btn-primary" onclick="app.goStats()">기록 통계</button>
+        <button class="btn btn-outline" onclick="app.goPassword()">경기 기록하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: MATCH LIST ===== -->
+  <div id="screen-matches" class="screen">
+    <div class="screen-header">
+      <button class="btn-back" onclick="app.back()">&#8592;</button>
+      <h2>경기별 기록</h2>
+      <div></div>
+    </div>
+    <div class="screen-body">
+      <div id="match-list"></div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: MATCH DETAIL ===== -->
+  <div id="screen-match-detail" class="screen">
+    <div class="screen-header">
+      <button class="btn-back" onclick="app.back()">&#8592;</button>
+      <h2>경기 상세</h2>
+      <div></div>
+    </div>
+    <div class="screen-body">
+      <div id="match-detail-content"></div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: STATS ===== -->
+  <div id="screen-stats" class="screen">
+    <div class="screen-header">
+      <button class="btn-back" onclick="app.back()">&#8592;</button>
+      <h2>기록 통계</h2>
+      <div></div>
+    </div>
+    <div class="tabs-bar">
+      <button class="tab-btn active" data-tab="goals" onclick="stats.showTab('goals', this)">골</button>
+      <button class="tab-btn" data-tab="assists" onclick="stats.showTab('assists', this)">어시스트</button>
+      <button class="tab-btn" data-tab="attendance" onclick="stats.showTab('attendance', this)">참석</button>
+    </div>
+    <div class="screen-body">
+      <div id="stats-content"></div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: PASSWORD ===== -->
+  <div id="screen-password" class="screen">
+    <div class="screen-header">
+      <button class="btn-back" onclick="app.back()">&#8592;</button>
+      <h2>기록원 전용</h2>
+      <div></div>
+    </div>
+    <div class="screen-body">
+      <div class="password-container">
+        <div class="password-icon">🔒</div>
+        <p class="password-label">비밀번호를 입력하세요</p>
+        <input type="password" id="password-input" class="input-field"
+          placeholder="비밀번호" onkeydown="if(event.key==='Enter') app.checkPassword()">
+        <button class="btn btn-primary" onclick="app.checkPassword()">확인</button>
+        <p id="password-error" class="error-msg" style="display:none">비밀번호가 틀렸습니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: RECORD FORM ===== -->
+  <div id="screen-record" class="screen">
+    <div class="screen-header">
+      <button class="btn-back" onclick="app.back()">&#8592;</button>
+      <h2>경기 기록하기</h2>
+      <div></div>
+    </div>
+    <div class="screen-body">
+      <div id="record-form-content"></div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/match.js"></script>
+  <script src="js/stats.js"></script>
+  <script src="js/record.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
