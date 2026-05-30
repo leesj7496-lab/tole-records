@@ -3,12 +3,14 @@ const record = {
   goalEntries: [],
   goalCounter: 0,
   selectedResult: '',
+  photos: [],
 
   init() {
     this.mercenaries = [];
     this.goalEntries = [];
     this.goalCounter = 0;
     this.selectedResult = '';
+    this.photos = [];
     this._renderForm();
   },
 
@@ -82,6 +84,21 @@ const record = {
             <span class="optional">(선택)</span>
           </div>
           <textarea id="rec-summary" class="form-textarea" placeholder="경기 총평을 입력하세요..."></textarea>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">
+            사진 첨부
+            <span class="optional">(선택, 최대 5장)</span>
+          </div>
+          <div id="photo-preview" class="photo-preview"></div>
+          <div class="photo-actions">
+            <input type="file" id="photo-input" accept="image/*" multiple style="display:none"
+              onchange="record.addPhotos(this.files)">
+            <button type="button" class="btn btn-secondary" id="photo-add-btn"
+              onclick="document.getElementById('photo-input').click()">+ 사진 추가</button>
+            <span id="photo-count" class="photo-count">0 / 5</span>
+          </div>
         </div>
 
         <button type="button" class="btn btn-primary btn-save" onclick="record.save()">저장하기</button>
@@ -208,6 +225,51 @@ const record = {
     });
   },
 
+  addPhotos(files) {
+    const remaining = 5 - this.photos.length;
+    if (remaining <= 0) { alert('사진은 최대 5장까지 첨부 가능합니다.'); return; }
+
+    const toAdd = Array.from(files).slice(0, remaining);
+    if (Array.from(files).length > remaining) {
+      alert(`최대 5장까지만 첨부 가능합니다. ${remaining}장만 추가됩니다.`);
+    }
+
+    let loaded = 0;
+    toAdd.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        this.photos.push({ dataUrl: e.target.result, name: file.name });
+        loaded++;
+        if (loaded === toAdd.length) this._renderPhotoPreview();
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.getElementById('photo-input').value = '';
+  },
+
+  removePhoto(index) {
+    this.photos.splice(index, 1);
+    this._renderPhotoPreview();
+  },
+
+  _renderPhotoPreview() {
+    const preview = document.getElementById('photo-preview');
+    const btn     = document.getElementById('photo-add-btn');
+    const count   = document.getElementById('photo-count');
+    if (!preview) return;
+
+    preview.innerHTML = this.photos.map((p, i) => `
+      <div class="photo-thumb">
+        <img src="${p.dataUrl}" alt="첨부 사진 ${i + 1}">
+        <button type="button" class="photo-thumb-del"
+          onclick="record.removePhoto(${i})" title="삭제">×</button>
+      </div>`).join('');
+
+    if (count) count.textContent = `${this.photos.length} / 5`;
+    if (btn)   btn.style.display = this.photos.length >= 5 ? 'none' : '';
+  },
+
   save() {
     const date     = document.getElementById('rec-date').value.trim();
     const location = document.getElementById('rec-location').value.trim();
@@ -246,6 +308,7 @@ const record = {
       members, summary
     };
 
+    // TODO: this.photos 에 첨부 사진 DataURL 보관 중 — Google Drive 연동 시 업로드 처리
     api.saveMatch(matchData, goals);
     alert('경기 기록이 저장됐습니다!');
     app.goMatches();
