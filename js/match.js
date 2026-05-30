@@ -62,28 +62,48 @@ const match = {
     const bar = document.getElementById('list-filter-bar');
     if (!bar) return;
 
-    const curYear  = new Date().getFullYear();
-    const startYear = 2024;
+    const matches = api._loaded ? api.getMatches() : [];
 
-    const yearOpts = [];
-    for (let y = startYear; y <= curYear; y++) {
-      yearOpts.push(`<option value="${y}" ${y === this.listYear ? 'selected' : ''}>${y}년</option>`);
+    let years, months;
+    if (matches.length) {
+      const yearSet = new Set(matches.map(m => parseInt(m.date.split('-')[0])));
+      years = [...yearSet].sort((a, b) => a - b);
+      if (!years.includes(this.listYear)) this.listYear = years[years.length - 1];
+
+      const monthSet = new Set(
+        matches
+          .filter(m => parseInt(m.date.split('-')[0]) === this.listYear)
+          .map(m => parseInt(m.date.split('-')[1]))
+      );
+      months = [...monthSet].sort((a, b) => a - b);
+      if (!months.includes(this.listMonth)) this.listMonth = months[months.length - 1];
+    } else {
+      years  = [new Date().getFullYear()];
+      months = [new Date().getMonth() + 1];
     }
 
-    const monthOpts = [];
-    for (let m = 1; m <= 12; m++) {
-      monthOpts.push(`<option value="${m}" ${m === this.listMonth ? 'selected' : ''}>${m}월</option>`);
-    }
+    const yearOpts  = years.map(y =>
+      `<option value="${y}" ${y === this.listYear ? 'selected' : ''}>${y}년</option>`
+    ).join('');
+    const monthOpts = months.map(m =>
+      `<option value="${m}" ${m === this.listMonth ? 'selected' : ''}>${m}월</option>`
+    ).join('');
 
     bar.innerHTML = `
       <div class="list-filter">
-        <select class="filter-select" id="filter-year" onchange="match.onFilterChange()">
-          ${yearOpts.join('')}
+        <select class="filter-select" id="filter-year" onchange="match.onYearChange()">
+          ${yearOpts}
         </select>
         <select class="filter-select" id="filter-month" onchange="match.onFilterChange()">
-          ${monthOpts.join('')}
+          ${monthOpts}
         </select>
       </div>`;
+  },
+
+  onYearChange() {
+    this.listYear = parseInt(document.getElementById('filter-year').value);
+    this._renderFilterBar();
+    this._renderFilteredList().catch(e => console.error(e));
   },
 
   onFilterChange() {
@@ -104,6 +124,7 @@ const match = {
         listEl.innerHTML = this._errorHtml(e.message, () => this._renderFilteredList());
         return;
       }
+      this._renderFilterBar();
     }
 
     const pad    = n => String(n).padStart(2, '0');
@@ -216,11 +237,12 @@ const match = {
     const container = document.getElementById('match-detail-content');
     container.innerHTML = this._loadingHtml();
 
-    let m, goals;
+    let m, goals, photos;
     try {
       const data = await api.fetchMatchDetail(matchId);
-      m     = data.match;
-      goals = data.goals || [];
+      m      = data.match;
+      goals  = data.goals  || [];
+      photos = data.photos || [];
     } catch(e) {
       container.innerHTML = this._errorHtml(e.message, () => this.renderDetail(matchId));
       return;
@@ -275,7 +297,7 @@ const match = {
             <div class="match-photo-thumb" onclick="match._openPhoto(${i})">
               <img src="${this._thumbUrl(p.drive_url)}"
                 alt="경기 사진 ${i + 1}" loading="lazy"
-                onerror="this.closest('.match-photo-thumb').style.display='none'">
+                onerror="match._photoError(this.parentElement)">
             </div>`).join('')}
         </div>
       </div>` : '';
@@ -350,6 +372,10 @@ const match = {
   _thumbUrl(url) {
     const m = url.match(/[?&]id=([^&]+)/);
     return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w400` : url;
+  },
+
+  _photoError(thumbEl) {
+    thumbEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--gray);font-size:0.75rem;text-align:center;line-height:1.3">이미지<br>없음</div>';
   },
 
   _loadingHtml() {
