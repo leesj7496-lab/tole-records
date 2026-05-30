@@ -671,6 +671,16 @@ a { color: var(--gold); text-decoration: none; }
 
 .step-hidden { display: none; }
 
+.draft-indicator {
+  display: none;
+  font-size: 0.78rem;
+  color: var(--gray);
+  text-align: right;
+  padding: 0 2px 10px;
+}
+.draft-indicator.visible { display: block; }
+.draft-check { color: var(--gold); font-weight: 700; }
+
 .step-actions {
   display: flex;
   flex-direction: column;
