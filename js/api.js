@@ -34,12 +34,31 @@ const api = {
     return PLAYERS;
   },
 
+  /**
+   * "Sun May 31 2026 00:00:00 GMT+0900 ..." 같은 깨진 날짜 문자열을
+   * "2026-05-31" 형식으로 정규화한다. GAS fmtDate 버그 대응 및 방어 코드.
+   */
+  _normalizeDate(str) {
+    str = String(str);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+    const MONTHS = { Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',
+                     Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12' };
+    const m = str.match(/(\w{3})\s+(\d{1,2})\s+(\d{4})/);
+    if (m && MONTHS[m[1]]) {
+      return `${m[3]}-${MONTHS[m[1]]}-${String(m[2]).padStart(2, '0')}`;
+    }
+    return str;
+  },
+
   getMatches() {
-    return this._load().matches.slice().sort((a, b) => a.date.localeCompare(b.date));
+    return this._load().matches
+      .map(m => ({ ...m, date: this._normalizeDate(m.date) }))
+      .sort((a, b) => a.date.localeCompare(b.date));
   },
 
   getMatch(matchId) {
-    return this._load().matches.find(m => m.match_id === matchId) || null;
+    const m = this._load().matches.find(m => m.match_id === matchId) || null;
+    return m ? { ...m, date: this._normalizeDate(m.date) } : null;
   },
 
   getGoals(matchId) {
@@ -113,7 +132,9 @@ const api = {
     try { json = JSON.parse(text); }
     catch(_) { throw new Error('GAS getMatch 응답이 JSON이 아닙니다.'); }
     if (!json.ok) throw new Error(json.error || 'API 오류');
-    return json.data; // { match, goals }
+    const d = json.data;
+    if (d.match) d.match.date = this._normalizeDate(d.match.date);
+    return d; // { match, goals }
   },
 
   /**

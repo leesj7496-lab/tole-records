@@ -67,10 +67,12 @@ function sheetToObjects(sheetName) {
 }
 
 /**
- * Date 객체 또는 문자열을 'yyyy-MM-dd' 형식으로 변환
+ * Date 객체 또는 문자열을 'yyyy-MM-dd' 형식으로 변환.
+ * GAS getValues()가 반환하는 Date는 instanceof Date가 false일 수 있으므로
+ * duck-typing(getFullYear 존재 여부)으로 판별한다.
  */
 function fmtDate(val) {
-  if (val instanceof Date) {
+  if (val && typeof val.getFullYear === 'function') {
     return Utilities.formatDate(val, 'Asia/Seoul', 'yyyy-MM-dd');
   }
   return String(val);
