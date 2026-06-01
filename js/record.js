@@ -25,6 +25,41 @@ const record = {
     }
   },
 
+  peekDraft() {
+    return this._loadDraft();
+  },
+
+  _draftPreviewHtml(draft) {
+    const date = draft.date
+      ? draft.date.replace(/-/g, '.')
+      : '날짜 미입력';
+    const location = (draft.location || '').trim() || '장소 미입력';
+    const opponent = (draft.opponent || '').trim() || '상대팀 미입력';
+    return `
+      <dl class="draft-preview">
+        <div class="draft-preview-row">
+          <dt>날짜</dt>
+          <dd>${this._escHtml(date)}</dd>
+        </div>
+        <div class="draft-preview-row">
+          <dt>장소</dt>
+          <dd>${this._escHtml(location)}</dd>
+        </div>
+        <div class="draft-preview-row">
+          <dt>상대팀</dt>
+          <dd>${this._escHtml(opponent)}</dd>
+        </div>
+      </dl>`;
+  },
+
+  _escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  },
+
   _showDraftPrompt(draft) {
     this._pendingDraft = draft;
     document.getElementById('record-form-content').innerHTML = `
@@ -32,6 +67,7 @@ const record = {
         <div class="draft-prompt-icon">📋</div>
         <h3 class="draft-prompt-title">이전 작성 중인 기록이 있습니다</h3>
         <p class="draft-prompt-time">마지막 저장: ${this._fmtDraftTime(draft.savedAt)}</p>
+        ${this._draftPreviewHtml(draft)}
         <div class="draft-prompt-actions">
           <button class="btn btn-primary" onclick="record._resumeDraft()">이어서 작성</button>
           <button class="btn btn-step" onclick="record._startFresh()">새로 작성</button>

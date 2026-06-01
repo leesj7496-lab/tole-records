@@ -28,7 +28,7 @@ fc-tole/
 ├── assets/
 │   └── 똘레랑스_로고.jpg
 ├── css/
-│   └── style.css           # 화이트/골드/블랙 테마
+│   └── style.css           # 다크/골드 럭셔리 테마
 ├── js/
 │   ├── app.js              # 화면 라우팅, 비밀번호 인증
 │   ├── api.js              # 데이터 레이어 (localStorage → Sheets 교체 예정)
@@ -181,6 +181,7 @@ async saveMatch(matchData, goalsData) {
 | `GET`  | `?action=getAll` | 경기 + 골 전체 일괄 조회 |
 | `GET`  | `?action=getMatch&matchId=m001` | 경기 상세 조회 (match + goals + photos) |
 | `POST` | `{ action: "saveMatch", match: {...}, goals: [...] }` | 새 경기 저장 |
+| `POST` | `{ action: "deleteTestData" }` | `td_` 접두 테스트(목) 데이터 일괄 삭제 |
 | `POST` | `{ action: "uploadPhoto", matchId: "...", base64: "data:image/jpeg;base64,...", fileName: "..." }` | 사진 Drive 업로드 |
 
 ---

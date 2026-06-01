@@ -48,6 +48,23 @@ const app = {
     this.navigate('password');
     document.getElementById('password-input').value = '';
     document.getElementById('password-error').style.display = 'none';
+    this._renderDraftNoticeOnPassword();
+  },
+
+  _renderDraftNoticeOnPassword() {
+    const el = document.getElementById('password-draft-notice');
+    if (!el) return;
+    const draft = record.peekDraft();
+    if (!draft) {
+      el.style.display = 'none';
+      el.innerHTML = '';
+      return;
+    }
+    el.style.display = 'block';
+    el.innerHTML = `
+      <p class="password-draft-label">작성 중인 경기 기록</p>
+      ${record._draftPreviewHtml(draft)}
+      <p class="password-draft-hint">비밀번호 확인 후 이어서 작성할 수 있습니다.</p>`;
   },
 
   checkPassword() {
