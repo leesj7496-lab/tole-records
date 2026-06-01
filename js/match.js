@@ -110,25 +110,43 @@ const match = {
 
   // ── Detail View ──────────────────────────────────────────────
 
+  /**
+   * [B] 캐시 우선 렌더링:
+   *  1) api._loaded → 캐시에서 즉시 렌더 (로딩 없음)
+   *  2) 캐시 없음   → loadData() (TTL 캐시 포함) 후 캐시 렌더
+   *  3) 그래도 없음 → fetchMatchDetail 직접 호출 (fallback)
+   */
   async renderDetail(matchId) {
     const container = document.getElementById('match-detail-content');
-    container.innerHTML = this._loadingHtml();
 
-    let m, goals;
+    // 캐시에 데이터 있으면 즉시 렌더 (로딩 스피너 없음)
+    if (api._loaded) {
+      const m     = api.getMatch(matchId);
+      const goals = api.getGoals(matchId);
+      if (m) { container.innerHTML = this._detailHtml(m, goals); return; }
+    }
+
+    // 캐시 없음 → loadData() → 재시도
+    container.innerHTML = this._loadingHtml();
     try {
+      await api.loadData();
+      const m     = api.getMatch(matchId);
+      const goals = api.getGoals(matchId);
+      if (m) { container.innerHTML = this._detailHtml(m, goals); return; }
+
+      // loadData에 해당 match_id 없는 경우 (직접 URL 접근 등) → API fallback
       const data = await api.fetchMatchDetail(matchId);
-      m     = data.match;
-      goals = data.goals || [];
+      if (!data.match) {
+        container.innerHTML = '<div class="no-data">경기 정보를 찾을 수 없습니다.</div>';
+        return;
+      }
+      container.innerHTML = this._detailHtml(data.match, data.goals || []);
     } catch(e) {
       container.innerHTML = this._errorHtml(e.message, () => this.renderDetail(matchId));
-      return;
     }
+  },
 
-    if (!m) {
-      container.innerHTML = '<div class="no-data">경기 정보를 찾을 수 없습니다.</div>';
-      return;
-    }
-
+  _detailHtml(m, goals) {
     const { badge, cls } = this._resultInfo(m.result);
     const officials   = m.members.filter(n => !n.includes('(용병)'));
     const mercenaries = m.members.filter(n => n.includes('(용병)'));
@@ -163,7 +181,7 @@ const match = {
         <div class="summary-box">${this._esc(m.summary)}</div>
       </div>` : '';
 
-    container.innerHTML = `
+    return `
       <div class="detail-hero">
         <div class="detail-date">${this._fmtDate(m.date)}</div>
         <div class="detail-location">${this._esc(m.location)}</div>

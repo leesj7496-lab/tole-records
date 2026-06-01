@@ -5,6 +5,8 @@ const app = {
 
   init() {
     this.showScreen('main');
+    // [C] 메인 화면을 보는 동안 백그라운드에서 데이터 프리패치
+    api.loadData().catch(() => {});
   },
 
   showScreen(id) {

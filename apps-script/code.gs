@@ -190,10 +190,20 @@ function doPost(e) {
 
 // ── 비즈니스 로직 ───────────────────────────────────────────────────
 
+var GAS_CACHE_KEY = 'all_data';
+var GAS_CACHE_TTL = 300; // 5분 (초 단위)
+
 /**
- * matches + goals 전체를 한 번에 반환 (클라이언트 초기 로드용)
+ * [D] matches + goals 전체를 한 번에 반환.
+ * CacheService로 스프레드시트 읽기를 캐싱해 실행 시간을 단축한다.
  */
 function getAllData() {
+  var cache  = CacheService.getScriptCache();
+  var cached = cache.get(GAS_CACHE_KEY);
+  if (cached) {
+    try { return JSON.parse(cached); } catch(_) {}
+  }
+
   var matches = getAllMatches();
   var goals   = sheetToObjects(SH.GOALS).map(function(g) {
     return {
@@ -204,7 +214,14 @@ function getAllData() {
       description: String(g.description || '')
     };
   });
-  return { matches: matches, goals: goals };
+  var data = { matches: matches, goals: goals };
+
+  try { cache.put(GAS_CACHE_KEY, JSON.stringify(data), GAS_CACHE_TTL); } catch(_) {}
+  return data;
+}
+
+function _invalidateGasCache() {
+  try { CacheService.getScriptCache().remove(GAS_CACHE_KEY); } catch(_) {}
 }
 
 function getAllMatches() {
@@ -277,6 +294,7 @@ function saveMatch(matchData, goalsData) {
     ]);
   });
 
+  _invalidateGasCache(); // 새 경기 저장 후 캐시 무효화
   return { match_id: matchId, saved_at: now };
 }
 
