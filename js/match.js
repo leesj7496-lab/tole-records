@@ -1,13 +1,13 @@
 const match = {
-  calYear:       new Date().getFullYear(),
-  calMonth:      new Date().getMonth(),      // 0-based
-  listYear:      new Date().getFullYear(),
-  listMonth:     new Date().getMonth() + 1,  // 1-based
-  // ── List View ────────────────────────────────────────────────
+  listYear:  new Date().getFullYear(),
+  listMonth: new Date().getMonth() + 1,  // 1-based
 
-  renderList() {
-    this.setView('list');
+  init() {
+    this._renderFilterBar();
+    this._renderFilteredList().catch(e => console.error(e));
   },
+
+  // ── List View ────────────────────────────────────────────────
 
   _cardHtml(m) {
     const { badge, cls } = this._resultInfo(m.result);
@@ -29,79 +29,42 @@ const match = {
       </div>`;
   },
 
-  // ── View Toggle ──────────────────────────────────────────────
-
-  setView(view) {
-    const listEl   = document.getElementById('match-list');
-    const calEl    = document.getElementById('match-calendar');
-    const filterEl = document.getElementById('list-filter-bar');
-    const listBtn  = document.getElementById('btn-view-list');
-    const calBtn   = document.getElementById('btn-view-cal');
-
-    if (view === 'list') {
-      listBtn?.classList.add('active');
-      calBtn?.classList.remove('active');
-      if (listEl)   listEl.style.display   = '';
-      if (calEl)    calEl.style.display    = 'none';
-      if (filterEl) filterEl.style.display = '';
-      this._renderFilterBar();
-      this._renderFilteredList().catch(e => console.error(e));
-    } else {
-      listBtn?.classList.remove('active');
-      calBtn?.classList.add('active');
-      if (listEl)   listEl.style.display   = 'none';
-      if (calEl)    calEl.style.display    = '';
-      if (filterEl) filterEl.style.display = 'none';
-      this.renderCalendar(this.calYear, this.calMonth).catch(e => console.error(e));
-    }
-  },
-
   _renderFilterBar() {
     const bar = document.getElementById('list-filter-bar');
     if (!bar) return;
 
-    const matches = api._loaded ? api.getMatches() : [];
+    const matches  = api._loaded ? api.getMatches() : [];
+    const curYear  = new Date().getFullYear();
+    const curMonth = new Date().getMonth() + 1;
 
-    let years, months;
+    // 연도: 데이터에 있는 연도 + 현재 연도 합집합
+    let years;
     if (matches.length) {
       const yearSet = new Set(matches.map(m => parseInt(m.date.split('-')[0])));
+      yearSet.add(curYear);
       years = [...yearSet].sort((a, b) => a - b);
-      if (!years.includes(this.listYear)) this.listYear = years[years.length - 1];
-
-      const monthSet = new Set(
-        matches
-          .filter(m => parseInt(m.date.split('-')[0]) === this.listYear)
-          .map(m => parseInt(m.date.split('-')[1]))
-      );
-      months = [...monthSet].sort((a, b) => a - b);
-      if (!months.includes(this.listMonth)) this.listMonth = months[months.length - 1];
     } else {
-      years  = [new Date().getFullYear()];
-      months = [new Date().getMonth() + 1];
+      years = [curYear];
     }
+    if (!years.includes(this.listYear)) this.listYear = curYear;
 
+    // 월: 항상 1~12 전체 표시
     const yearOpts  = years.map(y =>
       `<option value="${y}" ${y === this.listYear ? 'selected' : ''}>${y}년</option>`
     ).join('');
-    const monthOpts = months.map(m =>
+    const monthOpts = Array.from({ length: 12 }, (_, i) => i + 1).map(m =>
       `<option value="${m}" ${m === this.listMonth ? 'selected' : ''}>${m}월</option>`
     ).join('');
 
     bar.innerHTML = `
       <div class="list-filter">
-        <select class="filter-select" id="filter-year" onchange="match.onYearChange()">
+        <select class="filter-select" id="filter-year" onchange="match.onFilterChange()">
           ${yearOpts}
         </select>
         <select class="filter-select" id="filter-month" onchange="match.onFilterChange()">
           ${monthOpts}
         </select>
       </div>`;
-  },
-
-  onYearChange() {
-    this.listYear = parseInt(document.getElementById('filter-year').value);
-    this._renderFilterBar();
-    this._renderFilteredList().catch(e => console.error(e));
   },
 
   onFilterChange() {
@@ -130,7 +93,10 @@ const match = {
     const matches = api.getMatches().filter(m => m.date.startsWith(prefix));
 
     if (!matches.length) {
-      listEl.innerHTML = `<div class="no-data"><div class="icon">📋</div>해당 월에 경기가 없습니다.</div>`;
+      const now = new Date();
+      const isCur = this.listYear === now.getFullYear() && this.listMonth === (now.getMonth() + 1);
+      const msg   = isCur ? '이번 달 경기가 없습니다.' : '해당 월에 경기가 없습니다.';
+      listEl.innerHTML = `<div class="no-data"><div class="icon">📋</div>${msg}</div>`;
       return;
     }
 
@@ -140,93 +106,6 @@ const match = {
       const last = listEl.lastElementChild;
       if (last) last.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, 150);
-  },
-
-  // ── Calendar View ────────────────────────────────────────────
-
-  async renderCalendar(year, month) {
-    this.calYear  = year;
-    this.calMonth = month;
-
-    const container = document.getElementById('match-calendar');
-
-    if (!api._loaded) {
-      container.innerHTML = this._loadingHtml();
-      try {
-        await api.loadData();
-      } catch(e) {
-        container.innerHTML = this._errorHtml(e.message, () => this.renderCalendar(year, month));
-        return;
-      }
-    }
-
-    const matches = api.getMatches();
-
-    const dateMap = {};
-    matches.forEach(m => { dateMap[m.date] = { id: m.match_id, result: m.result }; });
-
-    const MONTHS   = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
-    const DAYS     = ['일','월','화','수','목','금','토'];
-    const pad      = n => String(n).padStart(2, '0');
-    const prefix   = `${year}-${pad(month + 1)}`;
-    const firstDow = new Date(year, month, 1).getDay();
-    const dimCur   = new Date(year, month + 1, 0).getDate();
-    const dimPrev  = new Date(year, month,  0).getDate();
-    const todayStr = new Date().toISOString().slice(0, 10);
-
-    const cells = [];
-    for (let i = firstDow - 1; i >= 0; i--)
-      cells.push({ day: dimPrev - i, cur: false });
-    for (let d = 1; d <= dimCur; d++) {
-      const dateStr = `${prefix}-${pad(d)}`;
-      const entry   = dateMap[dateStr] || null;
-      cells.push({ day: d, cur: true, dateStr, matchId: entry?.id || null, result: entry?.result || null, isToday: dateStr === todayStr });
-    }
-    let nd = 1;
-    while (cells.length % 7 !== 0) cells.push({ day: nd++, cur: false });
-
-    const headers = DAYS.map(d => `<div class="cal-day-name">${d}</div>`).join('');
-
-    const cellsHtml = cells.map(c => {
-      if (!c.cur)
-        return `<div class="cal-day other-month"><span class="cal-day-num">${c.day}</span></div>`;
-
-      const resultCls = c.result === '승' ? 'match-win' : c.result === '무' ? 'match-draw' : c.result === '패' ? 'match-loss' : '';
-      const cls   = ['cal-day', c.isToday ? 'today' : '', resultCls].filter(Boolean).join(' ');
-      const click = c.matchId ? `onclick="app.goMatchDetail('${c.matchId}')"` : '';
-      return `
-        <div class="${cls}" ${click}>
-          <span class="cal-day-num">${c.day}</span>
-        </div>`;
-    }).join('');
-
-    const hasMatches = matches.some(m => m.date.startsWith(prefix));
-
-    container.innerHTML = `
-      <div class="calendar">
-        <div class="cal-header">
-          <button class="cal-nav-btn" onclick="match.prevMonth()">&#8249;</button>
-          <span class="cal-title">${year}년 ${MONTHS[month]}</span>
-          <button class="cal-nav-btn" onclick="match.nextMonth()">&#8250;</button>
-        </div>
-        <div class="cal-grid">
-          ${headers}
-          ${cellsHtml}
-        </div>
-        ${!hasMatches ? '<div class="cal-no-match">이번 달 경기 없음</div>' : ''}
-      </div>`;
-  },
-
-  prevMonth() {
-    let y = this.calYear, m = this.calMonth - 1;
-    if (m < 0) { m = 11; y--; }
-    this.renderCalendar(y, m).catch(e => console.error(e));
-  },
-
-  nextMonth() {
-    let y = this.calYear, m = this.calMonth + 1;
-    if (m > 11) { m = 0; y++; }
-    this.renderCalendar(y, m).catch(e => console.error(e));
   },
 
   // ── Detail View ──────────────────────────────────────────────

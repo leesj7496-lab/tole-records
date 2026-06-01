@@ -6,6 +6,7 @@ const record = {
   goalCounter: 0,
   selectedResult: '',
   _saveTimer: null,
+  _editMatchId: null,   // 수정 모드 시 자기 자신 match_id (중복 체크 제외용)
 
   init() {
     this.mercenaries = [];
@@ -14,6 +15,7 @@ const record = {
     this.selectedResult = '';
     this._saveTimer = null;
     this._pendingDraft = null;
+    this._editMatchId = null;
 
     const draft = this._loadDraft();
     if (draft) {
@@ -81,7 +83,7 @@ const record = {
               <div class="form-group">
                 <label class="form-label">날짜</label>
                 <input type="date" id="rec-date" class="form-input" value="${today}"
-                  oninput="record._autosaveDraft()">
+                  oninput="record._onDateChange()">
               </div>
               <div class="form-group">
                 <label class="form-label">장소</label>
@@ -93,6 +95,9 @@ const record = {
                 <input type="text" id="rec-opponent" class="form-input" placeholder="상대팀 이름"
                   oninput="record._autosaveDraft()">
               </div>
+              <p id="date-dup-error" style="display:none;color:var(--loss);font-size:0.83rem;margin:0 0 8px;line-height:1.5">
+                해당 날짜에 이미 경기 기록이 있습니다.
+              </p>
               <button type="button" class="btn btn-step" onclick="record.nextStep(1)">참여 멤버 입력 →</button>
             </div>
           </div>
@@ -181,6 +186,17 @@ const record = {
   // ── Step Navigation ──────────────────────────────────────────
 
   nextStep(n) {
+    if (n === 1) {
+      const date  = document.getElementById('rec-date')?.value;
+      const errEl = document.getElementById('date-dup-error');
+      if (errEl) errEl.style.display = 'none';
+      if (!date) { alert('날짜를 입력하세요.'); return; }
+      if (this._hasDupDate(date)) {
+        if (errEl) errEl.style.display = '';
+        return;
+      }
+    }
+
     const summaryText = this[`_getStep${n}Summary`]();
     document.getElementById(`step-${n}-summary-text`).textContent = summaryText;
     document.getElementById(`step-${n}-summary-bar`).style.display = 'flex';
@@ -193,6 +209,18 @@ const record = {
     }
 
     this._autosaveDraftNow();
+  },
+
+  _onDateChange() {
+    const errEl = document.getElementById('date-dup-error');
+    if (errEl) errEl.style.display = 'none';
+    this._autosaveDraft();
+  },
+
+  _hasDupDate(date) {
+    return api.getMatches().some(m =>
+      m.date === date && m.match_id !== this._editMatchId
+    );
   },
 
   expandStep(n) {
@@ -531,6 +559,7 @@ const record = {
     if (!opponent)                          { alert('상대팀 이름을 입력하세요.'); return; }
     if (ourScore === '' || oppScore === '') { alert('스코어를 입력하세요.'); return; }
     if (!this.selectedResult)              { alert('결과를 선택하세요.'); return; }
+    if (this._hasDupDate(date))            { alert('해당 날짜에 이미 경기 기록이 있습니다.'); return; }
 
     const checked = [...document.querySelectorAll('.member-check:checked')].map(el => el.value);
     const mercs   = this.mercenaries.map(m => m + '(용병)');

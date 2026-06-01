@@ -31,7 +31,7 @@ const app = {
   },
 
   goMatches() {
-    this.navigate('matches', () => match.setView('calendar'));
+    this.navigate('matches', () => match.init());
   },
 
   goMatchDetail(matchId) {
