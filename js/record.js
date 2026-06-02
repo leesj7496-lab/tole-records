@@ -541,9 +541,9 @@ const record = {
       </div>
       <div class="form-group">
         <label class="form-label">상황 묘사 <span style="color:var(--gray);font-weight:400">(선택)</span></label>
-        <input type="text" class="form-input goal-desc" id="desc-${id}"
+        <textarea class="form-textarea goal-desc" id="desc-${id}" rows="3"
           placeholder="예: 역습 상황에서 침착한 마무리"
-          oninput="record._updateGoalField(${id}, 'description', this.value)">
+          oninput="record._updateGoalField(${id}, 'description', this.value)"></textarea>
       </div>`;
     container.appendChild(div);
   },

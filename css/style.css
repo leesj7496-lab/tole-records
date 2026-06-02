@@ -389,6 +389,11 @@ a { color: var(--gold); text-decoration: none; }
   font-style: italic;
 }
 
+.multiline-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .summary-box {
   background: var(--dark);
   border-left: 3px solid var(--gold);
@@ -876,6 +881,11 @@ a { color: var(--gold); text-decoration: none; }
   gap: 8px;
   max-width: 600px;
   margin: 0 auto;
+}
+
+.list-filter-year-only .filter-select {
+  flex: 1;
+  max-width: 200px;
 }
 .filter-select {
   flex: 1;

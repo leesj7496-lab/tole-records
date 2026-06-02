@@ -1,8 +1,8 @@
 const match = {
-  listYear:  new Date().getFullYear(),
-  listMonth: new Date().getMonth() + 1,  // 1-based
+  listYear: new Date().getFullYear(),
 
   init() {
+    this.listYear = new Date().getFullYear();
     this._renderFilterBar();
     this._renderFilteredList().catch(e => console.error(e));
   },
@@ -33,14 +33,12 @@ const match = {
     const bar = document.getElementById('list-filter-bar');
     if (!bar) return;
 
-    const matches  = api._loaded ? api.getMatches() : [];
-    const curYear  = new Date().getFullYear();
-    const curMonth = new Date().getMonth() + 1;
+    const matches = api._loaded ? api.getMatches() : [];
+    const curYear = new Date().getFullYear();
 
-    // 연도: 데이터에 있는 연도 + 현재 연도 합집합
     let years;
     if (matches.length) {
-      const yearSet = new Set(matches.map(m => parseInt(m.date.split('-')[0])));
+      const yearSet = new Set(matches.map(m => parseInt(m.date.split('-')[0], 10)));
       yearSet.add(curYear);
       years = [...yearSet].sort((a, b) => a - b);
     } else {
@@ -48,28 +46,20 @@ const match = {
     }
     if (!years.includes(this.listYear)) this.listYear = curYear;
 
-    // 월: 항상 1~12 전체 표시
-    const yearOpts  = years.map(y =>
+    const yearOpts = years.map(y =>
       `<option value="${y}" ${y === this.listYear ? 'selected' : ''}>${y}년</option>`
-    ).join('');
-    const monthOpts = Array.from({ length: 12 }, (_, i) => i + 1).map(m =>
-      `<option value="${m}" ${m === this.listMonth ? 'selected' : ''}>${m}월</option>`
     ).join('');
 
     bar.innerHTML = `
-      <div class="list-filter">
+      <div class="list-filter list-filter-year-only">
         <select class="filter-select" id="filter-year" onchange="match.onFilterChange()">
           ${yearOpts}
-        </select>
-        <select class="filter-select" id="filter-month" onchange="match.onFilterChange()">
-          ${monthOpts}
         </select>
       </div>`;
   },
 
   onFilterChange() {
-    this.listYear  = parseInt(document.getElementById('filter-year').value);
-    this.listMonth = parseInt(document.getElementById('filter-month').value);
+    this.listYear = parseInt(document.getElementById('filter-year').value, 10);
     this._renderFilteredList().catch(e => console.error(e));
   },
 
@@ -88,24 +78,26 @@ const match = {
       this._renderFilterBar();
     }
 
-    const pad    = n => String(n).padStart(2, '0');
-    const prefix = `${this.listYear}-${pad(this.listMonth)}`;
-    const matches = api.getMatches().filter(m => m.date.startsWith(prefix));
+    const matches = api.getMatches()
+      .filter(m => parseInt(m.date.split('-')[0], 10) === this.listYear)
+      .sort((a, b) => a.date.localeCompare(b.date));
 
     if (!matches.length) {
       const now = new Date();
-      const isCur = this.listYear === now.getFullYear() && this.listMonth === (now.getMonth() + 1);
-      const msg   = isCur ? '이번 달 경기가 없습니다.' : '해당 월에 경기가 없습니다.';
+      const isCurYear = this.listYear === now.getFullYear();
+      const msg = isCurYear ? '올해 경기 기록이 없습니다.' : '해당 연도에 경기가 없습니다.';
       listEl.innerHTML = `<div class="no-data"><div class="icon">📋</div>${msg}</div>`;
       return;
     }
 
     listEl.innerHTML = matches.map(m => this._cardHtml(m)).join('');
+    this._scrollToLatestMatch();
+  },
 
+  _scrollToLatestMatch() {
     setTimeout(() => {
-      const last = listEl.lastElementChild;
-      if (last) last.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 150);
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }, 200);
   },
 
   // ── Detail View ──────────────────────────────────────────────
@@ -171,14 +163,14 @@ const match = {
                 <span class="goal-player-name">${this._esc(g.assist)}</span>
               </div>` : ''}
             </div>
-            ${g.description ? `<div class="goal-description">${this._esc(g.description)}</div>` : ''}
+            ${g.description ? `<div class="goal-description multiline-text">${this._esc(g.description)}</div>` : ''}
           </div>`).join('')
       : '<p style="color:var(--gray);font-size:0.88rem">득점 기록 없음</p>';
 
     const summarySection = m.summary ? `
       <div class="detail-section">
         <div class="detail-section-title">총평</div>
-        <div class="summary-box">${this._esc(m.summary)}</div>
+        <div class="summary-box multiline-text">${this._esc(m.summary)}</div>
       </div>` : '';
 
     return `
