@@ -90,8 +90,47 @@ const match = {
       return;
     }
 
+    this._renderStatCard(matches);
     listEl.innerHTML = matches.map(m => this._cardHtml(m)).join('');
     this._scrollToLatestMatch();
+  },
+
+  _renderStatCard(matches) {
+    const card = document.getElementById('match-stat-card');
+    if (!card) return;
+    if (!matches.length) { card.innerHTML = ''; return; }
+
+    const total  = matches.length;
+    const wins   = matches.filter(m => m.result === '승').length;
+    const draws  = matches.filter(m => m.result === '무').length;
+    const losses = matches.filter(m => m.result === '패').length;
+    const rate   = Math.round(wins / total * 100);
+
+    card.innerHTML = `
+      <div class="stat-summary-card">
+        <div class="stat-summary-item">
+          <span class="stat-summary-num">${total}</span>
+          <span class="stat-summary-label">경기</span>
+        </div>
+        <div class="stat-summary-divider"></div>
+        <div class="stat-summary-item">
+          <span class="stat-summary-num win-color">${wins}</span>
+          <span class="stat-summary-label">승</span>
+        </div>
+        <div class="stat-summary-item">
+          <span class="stat-summary-num draw-color">${draws}</span>
+          <span class="stat-summary-label">무</span>
+        </div>
+        <div class="stat-summary-item">
+          <span class="stat-summary-num loss-color">${losses}</span>
+          <span class="stat-summary-label">패</span>
+        </div>
+        <div class="stat-summary-divider"></div>
+        <div class="stat-summary-item">
+          <span class="stat-summary-num">${rate}%</span>
+          <span class="stat-summary-label">승률</span>
+        </div>
+      </div>`;
   },
 
   _scrollToLatestMatch() {

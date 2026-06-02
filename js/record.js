@@ -633,7 +633,39 @@ const record = {
     }
 
     this._clearDraft();
-    alert('경기 기록이 저장됐습니다!');
-    app.goMatches();
+    this._playSuccessSound();
+
+    document.getElementById('record-form-content').innerHTML = `
+      <div class="save-success">
+        <div class="save-success-icon">✓</div>
+        <p class="save-success-msg">경기 기록이 저장됐습니다.</p>
+        <p class="save-success-sub">잠시 후 메인으로 이동합니다…</p>
+      </div>`;
+
+    setTimeout(() => {
+      app.history = [];
+      app.showScreen('main');
+    }, 2000);
+  },
+
+  _playSuccessSound() {
+    try {
+      const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+      const play = (freq, start, dur) => {
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+        gain.gain.setValueAtTime(0.25, ctx.currentTime + start);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+        osc.start(ctx.currentTime + start);
+        osc.stop(ctx.currentTime + start + dur);
+      };
+      play(880, 0,    0.18);
+      play(1047, 0.18, 0.25);
+    } catch(e) {}
   }
+};
 };

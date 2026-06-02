@@ -5,6 +5,20 @@ const app = {
 
   init() {
     this.showScreen('main');
+
+    // Android 뒤로가기 지원
+    // 페이지 진입 시 state 하나를 미리 쌓아 popstate가 항상 발화하도록 한다.
+    history.pushState(null, null, null);
+    window.addEventListener('popstate', () => {
+      if (this.history.length === 0) {
+        // 메인 화면 — 기본 동작(앱 종료/탭 닫기)에 맡긴다.
+        return;
+      }
+      // 이전 화면으로 이동하고, 다음 뒤로가기를 위해 state를 다시 쌓는다.
+      this.showScreen(this.history.pop());
+      history.pushState(null, null, null);
+    });
+
     // [C] 메인 화면을 보는 동안 백그라운드에서 데이터 프리패치
     api.loadData().catch(() => {});
   },
@@ -70,7 +84,6 @@ const app = {
   checkPassword() {
     const input = document.getElementById('password-input').value;
     if (input === PASSWORD) {
-      // 비밀번호 화면은 히스토리에 남기지 않고 메인으로 돌아가게
       this.history = ['main'];
       this.showScreen('record');
       record.init();
