@@ -668,4 +668,3 @@ const record = {
     } catch(e) {}
   }
 };
-};

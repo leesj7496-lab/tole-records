@@ -83,6 +83,8 @@ const match = {
       .sort((a, b) => a.date.localeCompare(b.date));
 
     if (!matches.length) {
+      const card = document.getElementById('match-stat-card');
+      if (card) card.innerHTML = '';
       const now = new Date();
       const isCurYear = this.listYear === now.getFullYear();
       const msg = isCurYear ? '올해 경기 기록이 없습니다.' : '해당 연도에 경기가 없습니다.';
